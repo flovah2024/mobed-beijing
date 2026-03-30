@@ -1999,12 +1999,6 @@ function handleAdminMediaUpload(event) {
     var promise = readFileAsDataURL(file, file.type.startsWith('video/') ? 'video' : 'image');
 
     promise.then(function(mediaObj) {
-      // Firebase 제한 체크 (base64 후 약 9MB 이하)
-      if (mediaObj.data.length > 9 * 1024 * 1024) {
-        showToast('⚠ ' + file.name + ' 너무 큽니다 (' + (mediaObj.data.length / 1024 / 1024).toFixed(1) + 'MB). 더 작은 파일을 사용해주세요.');
-        processedCount++;
-        return;
-      }
       window.adminMediaData.push(mediaObj);
       processedCount++;
       renderAdminMediaGrid();
@@ -2154,11 +2148,6 @@ function syncToClient() {
   // 데이터 크기 체크
   var dataStr = JSON.stringify(data);
   var dataSizeMB = (dataStr.length / 1024 / 1024).toFixed(1);
-  if (dataStr.length > 9 * 1024 * 1024) {
-    showToast('⚠ 데이터가 너무 큽니다 (' + dataSizeMB + 'MB). 미디어 파일을 줄여주세요.');
-    return;
-  }
-
   // 동기화 상태 표시
   const syncBtn = document.querySelector('.admin-btn[onclick="syncToClient()"]');
   if (syncBtn) {
