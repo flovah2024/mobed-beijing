@@ -1685,38 +1685,51 @@ function saveAdminChanges() {
   // Firebase에 저장 (동기화)
   data.syncTimestamp = new Date().toISOString();
   db.ref('clientData').update(data).then(function() {
-    alert('Changes saved to Firebase successfully.');
+    showToast('Firebase에 저장 완료!');
   }).catch(function(error) {
-    alert('Save error: ' + error.message);
+    showToast('저장 오류: ' + error.message);
   });
 }
 
 function handleAdminMediaUpload(event) {
   const files = event.target.files;
+  const MAX_FILE_SIZE = 7 * 1024 * 1024; // 7MB (base64 변환 후 ~9.3MB, Firebase 10MB 제한 이내)
   let uploadCount = 0;
-  const totalFiles = Array.from(files).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/')).length;
+  let skippedCount = 0;
+  const validFiles = Array.from(files).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
+  const totalFiles = validFiles.length;
 
-  for (const file of files) {
-    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        window.adminMediaData.push({
-          type: file.type.startsWith('image/') ? 'image' : 'video',
-          data: e.target.result,
-          name: file.name,
-          size: file.size
-        });
+  for (const file of validFiles) {
+    // 파일 크기 체크
+    if (file.size > MAX_FILE_SIZE) {
+      skippedCount++;
+      showToast('⚠ ' + file.name + ' 용량 초과 (' + (file.size / 1024 / 1024).toFixed(1) + 'MB). 7MB 이하만 가능합니다.');
+      if (uploadCount + skippedCount === totalFiles && uploadCount > 0) {
+        showToast(uploadCount + '개 업로드, ' + skippedCount + '개 건너뜀');
+      }
+      continue;
+    }
 
-        uploadCount++;
-        renderAdminMediaGrid();
+    const reader = new FileReader();
+    showToast('📁 ' + file.name + ' 읽는 중... (' + (file.size / 1024 / 1024).toFixed(1) + 'MB)');
+    reader.onload = function(e) {
+      window.adminMediaData.push({
+        type: file.type.startsWith('image/') ? 'image' : 'video',
+        data: e.target.result,
+        name: file.name,
+        size: file.size
+      });
 
-        if (uploadCount === totalFiles) {
-          alert('Uploaded ' + uploadCount + ' file(s) successfully.');
-        }
-      };
-      reader.onerror = function() {
-        alert('Error reading file: ' + file.name);
-      };
+      uploadCount++;
+      renderAdminMediaGrid();
+
+      if (uploadCount + skippedCount === totalFiles) {
+        showToast('✓ ' + uploadCount + '개 파일 업로드 완료!' + (skippedCount > 0 ? ' (' + skippedCount + '개 건너뜀)' : ''));
+      }
+    };
+    reader.onerror = function() {
+      showToast('파일 읽기 오류: ' + file.name);
+    };
       reader.readAsDataURL(file);
     }
   }
@@ -1824,26 +1837,62 @@ function syncToClient() {
     data.media = [];
   }
 
+  // 데이터 크기 체크
+  var dataStr = JSON.stringify(data);
+  var dataSizeMB = (dataStr.length / 1024 / 1024).toFixed(1);
+  if (dataStr.length > 9 * 1024 * 1024) {
+    showToast('⚠ 데이터가 너무 큽니다 (' + dataSizeMB + 'MB). 미디어 파일을 줄여주세요.');
+    return;
+  }
+
   // 동기화 상태 표시
   const syncBtn = document.querySelector('.admin-btn[onclick="syncToClient()"]');
   if (syncBtn) {
-    syncBtn.textContent = 'Syncing...';
+    syncBtn.textContent = 'Syncing... (' + dataSizeMB + 'MB)';
     syncBtn.disabled = true;
   }
+  showToast('🔄 Firebase 동기화 중... (' + dataSizeMB + 'MB)');
 
   db.ref('clientData').set(data).then(function() {
     if (syncBtn) {
-      syncBtn.textContent = 'Sync to Client';
+      syncBtn.textContent = '✓ Synced!';
+      syncBtn.style.background = '#22c55e';
       syncBtn.disabled = false;
+      setTimeout(function() {
+        syncBtn.textContent = 'Sync to Client';
+        syncBtn.style.background = '';
+      }, 2000);
     }
-    alert('Synced to Firebase successfully! All devices will update in real-time.');
+    showToast('Firebase 동기화 완료! 모든 기기에 실시간 반영됩니다.');
   }).catch(function(error) {
     if (syncBtn) {
-      syncBtn.textContent = 'Sync to Client';
+      syncBtn.textContent = '✗ Error';
+      syncBtn.style.background = '#ef4444';
       syncBtn.disabled = false;
+      setTimeout(function() {
+        syncBtn.textContent = 'Sync to Client';
+        syncBtn.style.background = '';
+      }, 2000);
     }
-    alert('Sync error: ' + error.message);
+    showToast('Sync 오류: ' + error.message);
   });
+}
+
+// Toast 알림 함수
+function showToast(message) {
+  var existing = document.getElementById('syncToast');
+  if (existing) existing.remove();
+
+  var toast = document.createElement('div');
+  toast.id = 'syncToast';
+  toast.textContent = message;
+  toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#e8713a;color:#fff;padding:14px 28px;border-radius:10px;font-size:14px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:opacity 0.3s;';
+  document.body.appendChild(toast);
+
+  setTimeout(function() {
+    toast.style.opacity = '0';
+    setTimeout(function() { toast.remove(); }, 300);
+  }, 2500);
 }
 
 // 어드민 패널 초기화
