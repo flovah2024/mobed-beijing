@@ -1668,12 +1668,12 @@ function loadSyncedData() {
         }
       }
 
-      // 미디어 업데이트
-      if (data.media && data.media.length > 0) {
+      // 미디어 업데이트 (메모리에서 로드)
+      if (window.clientMediaData && window.clientMediaData.length > 0) {
         const mediaGrid = document.getElementById('mediaGrid');
         mediaGrid.innerHTML = '';
 
-        data.media.forEach((media) => {
+        window.clientMediaData.forEach((media) => {
           const mediaItem = document.createElement('div');
           mediaItem.className = 'media-item';
 
@@ -1749,8 +1749,9 @@ function loadSyncedData() {
   loadSyncedData();
 })();
 
-// Global admin media storage (in-memory, not localStorage)
-window.adminMediaData = [];
+// Global media storage (in-memory, not localStorage)
+window.adminMediaData = [];   // Admin 패널에서 편집 중인 미디어
+window.clientMediaData = [];  // 클라이언트에 표시될 미디어
 
 // 관리자 모드 함수들
 function showAdminModal() {
@@ -1949,6 +1950,7 @@ function removeAdminMedia(index) {
 }
 
 function syncToClient() {
+  // localStorage에는 메타데이터만 저장 (미디어 제외)
   const data = {
     projectTitle: document.getElementById('adminProjectTitle').value,
     projectDesc: document.getElementById('adminProjectDesc').value,
@@ -1958,12 +1960,15 @@ function syncToClient() {
     card2Desc: document.getElementById('adminCard2Desc').value,
     card3Title: document.getElementById('adminCard3Title').value,
     card3Desc: document.getElementById('adminCard3Desc').value,
-    media: window.adminMediaData,
+    mediaCount: window.adminMediaData.length,
     syncTimestamp: new Date().toISOString()
   };
 
   try {
     localStorage.setItem('mobed-client-data', JSON.stringify(data));
+
+    // 미디어는 메모리에만 저장 (전역 변수)
+    window.clientMediaData = window.adminMediaData;
 
     // 즉시 페이지에 반영
     document.getElementById('projectTitleDisplay').textContent = data.projectTitle;
@@ -1975,12 +1980,12 @@ function syncToClient() {
     document.getElementById('card3TitleDisplay').textContent = data.card3Title;
     document.getElementById('card3DescDisplay').textContent = data.card3Desc;
 
-    // 미디어 업데이트
-    if (data.media && data.media.length > 0) {
+    // 미디어 업데이트 (메모리에서 로드)
+    if (window.clientMediaData && window.clientMediaData.length > 0) {
       const mediaGrid = document.getElementById('mediaGrid');
       mediaGrid.innerHTML = '';
 
-      data.media.forEach((media) => {
+      window.clientMediaData.forEach((media) => {
         const mediaItem = document.createElement('div');
         mediaItem.className = 'media-item';
 
