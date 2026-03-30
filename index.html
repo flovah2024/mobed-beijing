@@ -286,14 +286,33 @@
     overflow: hidden;
     background: rgba(255,255,255,0.03);
     border: 1px solid var(--border);
-    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
   }
 
   .admin-media-item img,
   .admin-media-item video {
     width: 100%;
-    height: 100%;
+    aspect-ratio: 16 / 9;
     object-fit: contain;
+    background: #000;
+  }
+
+  .admin-media-item .media-caption-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-top: 1px solid var(--border);
+    color: var(--text);
+    font-size: 11px;
+    padding: 6px 8px;
+    outline: none;
+  }
+  .admin-media-item .media-caption-input:focus {
+    background: rgba(232,113,58,0.08);
+  }
+  .admin-media-item .media-caption-input::placeholder {
+    color: var(--text-dim);
   }
 
   .admin-media-remove {
@@ -2010,6 +2029,21 @@ function renderAdminMediaGrid() {
     mediaItem.innerHTML = element + `
       <button class="admin-media-remove" onclick="removeAdminMedia(${index})">X</button>
     `;
+
+    // 캡션 입력란 추가
+    var captionInput = document.createElement('input');
+    captionInput.className = 'media-caption-input';
+    captionInput.type = 'text';
+    captionInput.placeholder = '캡션 입력...';
+    captionInput.value = media.caption || '';
+    captionInput.dataset.idx = index;
+    captionInput.onblur = function() {
+      saveMediaCaption(parseInt(this.dataset.idx), this.value);
+    };
+    captionInput.onkeydown = function(e) {
+      if (e.key === 'Enter') this.blur();
+    };
+    mediaItem.appendChild(captionInput);
 
     mediaItem.addEventListener('dragstart', handleAdminDragStart);
     mediaItem.addEventListener('dragover', handleAdminDragOver);
