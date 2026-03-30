@@ -1835,6 +1835,9 @@ function saveAdminChanges() {
 // (압축 함수 제거됨 - 사용자가 직접 해상도 조절)
 
 // 파일을 DataURL로 읽기 (공통 헬퍼)
+// Firebase 쓰기 제한 (~10MB). base64는 원본의 ~1.37배이므로 원본 ~7MB가 한계
+var FIREBASE_MAX_BYTES = 9 * 1024 * 1024; // 안전하게 9MB
+
 function readFileAsDataURL(file, type) {
   return new Promise(function(resolve, reject) {
     var reader = new FileReader();
@@ -1843,6 +1846,142 @@ function readFileAsDataURL(file, type) {
     };
     reader.onerror = function() { reject(new Error('파일 읽기 실패')); };
     reader.readAsDataURL(file);
+  });
+}
+
+// 이미지 리사이즈 (maxWidth 기준, JPEG 품질 조절)
+function resizeImage(dataUrl, maxWidth, quality) {
+  return new Promise(function(resolve, reject) {
+    var img = new Image();
+    img.onload = function() {
+      var w = img.width, h = img.height;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = function() { reject(new Error('이미지 로드 실패')); };
+    img.src = dataUrl;
+  });
+}
+
+// 영상 리사이즈 (canvas + MediaRecorder)
+function resizeVideo(file, scale) {
+  return new Promise(function(resolve, reject) {
+    var video = document.createElement('video');
+    video.muted = true; video.playsInline = true; video.preload = 'auto';
+    var url = URL.createObjectURL(file);
+    video.src = url;
+
+    video.onloadedmetadata = function() {
+      var duration = video.duration;
+      var w = Math.round(video.videoWidth * scale);
+      var h = Math.round(video.videoHeight * scale);
+      // 짝수로 맞추기
+      w = w % 2 === 0 ? w : w - 1;
+      h = h % 2 === 0 ? h : h - 1;
+      showToast('🎬 영상 리사이즈: ' + video.videoWidth + 'x' + video.videoHeight + ' → ' + w + 'x' + h);
+
+      var canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      var ctx = canvas.getContext('2d');
+
+      var mimeType = 'video/webm;codecs=vp8';
+      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+      var stream = canvas.captureStream(24);
+      var recorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: 1500000 });
+      var chunks = [];
+      recorder.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
+
+      var stopped = false;
+      recorder.onstop = function() {
+        URL.revokeObjectURL(url);
+        clearInterval(drawInterval);
+        var blob = new Blob(chunks, { type: 'video/webm' });
+        var reader = new FileReader();
+        reader.onload = function(e2) {
+          resolve({ type: 'video', data: e2.target.result, name: file.name.replace(/\.[^.]+$/, '.webm'), size: blob.size });
+        };
+        reader.readAsDataURL(blob);
+      };
+
+      var drawInterval;
+      recorder.start(100);
+      video.play();
+      drawInterval = setInterval(function() {
+        if (!video.paused && !video.ended) ctx.drawImage(video, 0, 0, w, h);
+      }, 1000 / 24);
+
+      video.onended = function() {
+        ctx.drawImage(video, 0, 0, w, h);
+        setTimeout(function() { if (!stopped) { stopped = true; recorder.stop(); } }, 500);
+      };
+      setTimeout(function() { if (!stopped) { stopped = true; video.pause(); if (recorder.state === 'recording') recorder.stop(); } }, (duration + 2) * 1000);
+      video.onerror = function() { URL.revokeObjectURL(url); clearInterval(drawInterval); reject(new Error('영상 로드 실패')); };
+      video.currentTime = 0;
+      video.oncanplay = function() { video.oncanplay = null; };
+    };
+  });
+}
+
+// 파일을 Firebase에 저장 가능한 크기로 준비 (필요시 자동 리사이즈)
+function prepareMediaForFirebase(file, fileType) {
+  return readFileAsDataURL(file, fileType).then(function(mediaObj) {
+    var dataSize = JSON.stringify(mediaObj).length;
+    console.log('[Prepare] ' + mediaObj.name + ' raw size: ' + (dataSize / 1024 / 1024).toFixed(1) + 'MB, limit: ' + (FIREBASE_MAX_BYTES / 1024 / 1024) + 'MB');
+
+    if (dataSize <= FIREBASE_MAX_BYTES) {
+      // 크기 OK → 그대로 사용
+      return mediaObj;
+    }
+
+    // 크기 초과 → 리사이즈 필요
+    showToast('⚠ ' + file.name + ' 크기 초과! 자동 리사이즈 중...');
+
+    if (fileType === 'image') {
+      // 이미지: 해상도 줄이기 + JPEG 품질 낮추기
+      var attempts = [
+        { maxW: 1920, q: 0.8 },
+        { maxW: 1280, q: 0.7 },
+        { maxW: 960, q: 0.6 },
+        { maxW: 640, q: 0.5 }
+      ];
+      function tryResize(idx) {
+        if (idx >= attempts.length) return Promise.reject(new Error('이미지가 너무 큽니다 (리사이즈 후에도 9MB 초과)'));
+        var a = attempts[idx];
+        return resizeImage(mediaObj.data, a.maxW, a.q).then(function(resizedData) {
+          var newObj = { type: 'image', data: resizedData, name: mediaObj.name, size: resizedData.length };
+          var newSize = JSON.stringify(newObj).length;
+          console.log('[Prepare] Image resized ' + a.maxW + 'px q' + a.q + ': ' + (newSize / 1024 / 1024).toFixed(1) + 'MB');
+          if (newSize <= FIREBASE_MAX_BYTES) {
+            showToast('✓ 이미지 리사이즈 완료 (' + (newSize / 1024 / 1024).toFixed(1) + 'MB)');
+            return newObj;
+          }
+          return tryResize(idx + 1);
+        });
+      }
+      return tryResize(0);
+    } else {
+      // 영상: 해상도 축소
+      var scales = [0.5, 0.35, 0.25];
+      function tryVideoResize(idx) {
+        if (idx >= scales.length) return Promise.reject(new Error('영상이 너무 큽니다 (리사이즈 후에도 9MB 초과). 더 짧거나 낮은 해상도 영상을 사용해주세요.'));
+        var s = scales[idx];
+        showToast('🎬 영상 ' + Math.round(s * 100) + '% 크기로 리사이즈 중...');
+        return resizeVideo(file, s).then(function(resizedObj) {
+          var newSize = JSON.stringify(resizedObj).length;
+          console.log('[Prepare] Video scale ' + s + ': ' + (newSize / 1024 / 1024).toFixed(1) + 'MB');
+          if (newSize <= FIREBASE_MAX_BYTES) {
+            showToast('✓ 영상 리사이즈 완료 (' + (newSize / 1024 / 1024).toFixed(1) + 'MB)');
+            return resizedObj;
+          }
+          return tryVideoResize(idx + 1);
+        });
+      }
+      return tryVideoResize(0);
+    }
   });
 }
 
@@ -1864,7 +2003,6 @@ function handleAdminMediaUpload(event) {
   console.log('[Upload] ' + totalFiles + ' files selected');
   showToast('📁 ' + totalFiles + '개 파일 처리 중...');
 
-  // 순차 업로드 (하나씩 읽고 Firebase에 바로 저장)
   var fileIdx = 0;
   function processNextFile() {
     if (fileIdx >= totalFiles) {
@@ -1877,17 +2015,18 @@ function handleAdminMediaUpload(event) {
     showToast('📁 ' + (fileIdx + 1) + '/' + totalFiles + ' ' + file.name + ' (' + originalMB + 'MB) 읽는 중...');
     console.log('[Upload] Reading file:', file.name, originalMB + 'MB');
 
-    readFileAsDataURL(file, fileType).then(function(mediaObj) {
-      console.log('[Upload] File read OK:', mediaObj.name, 'data length:', mediaObj.data.length);
-      // Firebase에 현재 미디어 개수 확인 후 다음 인덱스에 저장
+    // 파일을 읽고 크기 체크 → 필요시 리사이즈 → Firebase 저장
+    prepareMediaForFirebase(file, fileType).then(function(mediaObj) {
+      var dataSizeMB = (mediaObj.data.length / 1024 / 1024).toFixed(1);
+      console.log('[Upload] Prepared:', mediaObj.name, dataSizeMB + 'MB');
       return db.ref('clientData/media').once('value').then(function(snapshot) {
         var existing = firebaseMediaToArray(snapshot.val());
         var nextIdx = existing.length;
         console.log('[Upload] Saving to Firebase index:', nextIdx);
-        showToast('📤 ' + file.name + ' Firebase 저장 중...');
+        showToast('📤 ' + mediaObj.name + ' (' + dataSizeMB + 'MB) Firebase 저장 중...');
         return db.ref('clientData/media/' + nextIdx).set(mediaObj).then(function() {
-          console.log('[Upload] Firebase save OK:', file.name);
-          showToast('✓ ' + file.name + ' 저장 완료! (' + (fileIdx + 1) + '/' + totalFiles + ')');
+          console.log('[Upload] Firebase save OK:', mediaObj.name);
+          showToast('✓ ' + mediaObj.name + ' 저장 완료! (' + (fileIdx + 1) + '/' + totalFiles + ')');
           fileIdx++;
           processNextFile();
         });
