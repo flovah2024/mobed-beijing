@@ -662,7 +662,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    max-height: 400px;
+    width: 100%;
+    height: 300px;
     cursor: grab;
   }
 
@@ -1397,34 +1398,34 @@
   <div class="milestone-section">
     <h2 data-ko="주요 마일스톤" data-en="Key Milestones">주요 마일스톤</h2>
     <div class="timeline">
-      <div class="tl-item learning done" onclick="toggleDone(this)">
-        <div class="tl-date" data-ko="3/24 (월) — 3/27 (목)" data-en="3/24 (Mon) — 3/27 (Thu)">3/24 (월) — 3/27 (목)</div>
-        <div class="tl-title" data-ko="리서치 & 학습" data-en="Research & Study">리서치 & 학습</div>
-        <div class="tl-desc" data-ko="모빌리티, 공간, 인물에 대한 AI 콘텐츠 레퍼런스 학습" data-en="AI content reference study on mobility, space, and characters">모빌리티, 공간, 인물에 대한 AI 콘텐츠 레퍼런스 학습</div>
+      <div class="tl-item learning done" id="milestone1" onclick="toggleDone(this)">
+        <div class="tl-date" data-ko="3/24 (월) — 3/27 (목)" data-en="3/24 (Mon) — 3/27 (Thu)" id="m1Date">3/24 (월) — 3/27 (목)</div>
+        <div class="tl-title" data-ko="리서치 & 학습" data-en="Research & Study" id="m1Title">리서치 & 학습</div>
+        <div class="tl-desc" data-ko="모빌리티, 공간, 인물에 대한 AI 콘텐츠 레퍼런스 학습" data-en="AI content reference study on mobility, space, and characters" id="m1Desc">모빌리티, 공간, 인물에 대한 AI 콘텐츠 레퍼런스 학습</div>
         <span class="tl-arrow">→</span>
       </div>
-      <div class="tl-item draft1" onclick="toggleDone(this)">
-        <div class="tl-date" data-ko="3/30 (월) — 4/3 (목)" data-en="3/30 (Mon) — 4/3 (Thu)">3/30 (월) — 4/3 (목)</div>
-        <div class="tl-title" data-ko="1차본 — 어반호퍼 & 골프 → 4/3 공유" data-en="1st Draft — Urban Hopper & Golf → 4/3 Delivery">1차본 — 어반호퍼 & 골프 → 4/3 공유</div>
-        <div class="tl-desc" data-ko="어반호퍼, 골프 중심 AI 콘텐츠 제작 및 클라이언트 공유" data-en="Urban Hopper & Golf focused AI content production and client delivery">어반호퍼, 골프 중심 AI 콘텐츠 제작 및 클라이언트 공유</div>
+      <div class="tl-item draft1" id="milestone2" onclick="toggleDone(this)">
+        <div class="tl-date" data-ko="3/30 (월) — 4/3 (목)" data-en="3/30 (Mon) — 4/3 (Thu)" id="m2Date">3/30 (월) — 4/3 (목)</div>
+        <div class="tl-title" data-ko="1차본 — 어반호퍼 & 골프 → 4/3 공유" data-en="1st Draft — Urban Hopper & Golf → 4/3 Delivery" id="m2Title">1차본 — 어반호퍼 & 골프 → 4/3 공유</div>
+        <div class="tl-desc" data-ko="어반호퍼, 골프 중심 AI 콘텐츠 제작 및 클라이언트 공유" data-en="Urban Hopper & Golf focused AI content production and client delivery" id="m2Desc">어반호퍼, 골프 중심 AI 콘텐츠 제작 및 클라이언트 공유</div>
         <span class="tl-arrow">→</span>
       </div>
-      <div class="tl-item draft2" onclick="toggleDone(this)">
-        <div class="tl-date" data-ko="4/6 (월) — 4/10 (금)" data-en="4/6 (Mon) — 4/10 (Fri)">4/6 (월) — 4/10 (금)</div>
-        <div class="tl-title" data-ko="2차본 — 보도발표회 → 4/10 전달" data-en="2nd Draft — Press Conference → 4/10 Delivery">2차본 — 보도발표회 → 4/10 전달</div>
-        <div class="tl-desc" data-ko="보도발표회 중심 콘텐츠 제작 및 전달" data-en="Press conference focused content production and delivery">보도발표회 중심 콘텐츠 제작 및 전달</div>
+      <div class="tl-item draft2" id="milestone3" onclick="toggleDone(this)">
+        <div class="tl-date" data-ko="4/6 (월) — 4/10 (금)" data-en="4/6 (Mon) — 4/10 (Fri)" id="m3Date">4/6 (월) — 4/10 (금)</div>
+        <div class="tl-title" data-ko="2차본 — 보도발표회 → 4/10 전달" data-en="2nd Draft — Press Conference → 4/10 Delivery" id="m3Title">2차본 — 보도발표회 → 4/10 전달</div>
+        <div class="tl-desc" data-ko="보도발표회 중심 콘텐츠 제작 및 전달" data-en="Press conference focused content production and delivery" id="m3Desc">보도발표회 중심 콘텐츠 제작 및 전달</div>
         <span class="tl-arrow">→</span>
       </div>
-      <div class="tl-item draft3" onclick="toggleDone(this)">
-        <div class="tl-date" data-ko="4/13 (월) — 4/17 (금)" data-en="4/13 (Mon) — 4/17 (Fri)">4/13 (월) — 4/17 (금)</div>
-        <div class="tl-title" data-ko="3차본 — 종합편집 & 수정 → 4/17 전달" data-en="3rd Draft — Final Edit & Revision → 4/17 Delivery">3차본 — 종합편집 & 수정 → 4/17 전달</div>
-        <div class="tl-desc" data-ko="전체 콘텐츠 종합 편집 및 수정 작업 후 전달" data-en="Complete content final editing and revision, then delivery">전체 콘텐츠 종합 편집 및 수정 작업 후 전달</div>
+      <div class="tl-item draft3" id="milestone4" onclick="toggleDone(this)">
+        <div class="tl-date" data-ko="4/13 (월) — 4/17 (금)" data-en="4/13 (Mon) — 4/17 (Fri)" id="m4Date">4/13 (월) — 4/17 (금)</div>
+        <div class="tl-title" data-ko="3차본 — 종합편집 & 수정 → 4/17 전달" data-en="3rd Draft — Final Edit & Revision → 4/17 Delivery" id="m4Title">3차본 — 종합편집 & 수정 → 4/17 전달</div>
+        <div class="tl-desc" data-ko="전체 콘텐츠 종합 편집 및 수정 작업 후 전달" data-en="Complete content final editing and revision, then delivery" id="m4Desc">전체 콘텐츠 종합 편집 및 수정 작업 후 전달</div>
         <span class="tl-arrow">→</span>
       </div>
-      <div class="tl-item final" onclick="toggleDone(this)">
-        <div class="tl-date" data-ko="4/20 (월) — 4/21 (화)" data-en="4/20 (Mon) — 4/21 (Tue)">4/20 (월) — 4/21 (화)</div>
-        <div class="tl-title" data-ko="최종 검수 → 4/21 최종본 공유" data-en="Final QC → 4/21 Final Delivery">최종 검수 → 4/21 최종본 공유</div>
-        <div class="tl-desc" data-ko="최종 품질 검수 완료 후 최종 납품" data-en="Final quality check and delivery">최종 품질 검수 완료 후 최종 납품</div>
+      <div class="tl-item final" id="milestone5" onclick="toggleDone(this)">
+        <div class="tl-date" data-ko="4/20 (월) — 4/21 (화)" data-en="4/20 (Mon) — 4/21 (Tue)" id="m5Date">4/20 (월) — 4/21 (화)</div>
+        <div class="tl-title" data-ko="최종 검수 → 4/21 최종본 공유" data-en="Final QC → 4/21 Final Delivery" id="m5Title">최종 검수 → 4/21 최종본 공유</div>
+        <div class="tl-desc" data-ko="최종 품질 검수 완료 후 최종 납품" data-en="Final quality check and delivery" id="m5Desc">최종 품질 검수 완료 후 최종 납품</div>
         <span class="tl-arrow">→</span>
       </div>
     </div>
@@ -1681,15 +1682,23 @@ function loadSyncedData() {
           if (media.type === 'image') {
             element = document.createElement('img');
             element.src = media.data;
+            element.style.width = '100%';
+            element.style.height = '100%';
+            element.style.objectFit = 'contain';
+            element.style.display = 'block';
           } else {
             element = document.createElement('video');
             element.src = media.data;
             element.controls = true;
+            element.style.width = '100%';
+            element.style.height = '100%';
+            element.style.objectFit = 'contain';
+            element.style.display = 'block';
           }
 
           const removeBtn = document.createElement('button');
           removeBtn.className = 'media-remove';
-          removeBtn.innerHTML = '✕';
+          removeBtn.innerHTML = 'X';
           removeBtn.onclick = function(e) {
             e.stopPropagation();
             mediaItem.remove();
@@ -1788,7 +1797,7 @@ function loadAdminForm() {
   // localStorage에서 저장된 데이터 불러오기
   const savedData = JSON.parse(localStorage.getItem('mobed-client-data') || '{}');
 
-  // 저장된 데이터가 있으면 사용, 없으면 현재 페이지에서 읽기
+  // 기본 정보 로드
   document.getElementById('adminProjectTitle').value =
     savedData.projectTitle || document.getElementById('projectTitleDisplay').textContent || '';
   document.getElementById('adminProjectDesc').value =
@@ -1805,6 +1814,16 @@ function loadAdminForm() {
     savedData.card3Title || document.getElementById('card3TitleDisplay').textContent || '';
   document.getElementById('adminCard3Desc').value =
     savedData.card3Desc || document.getElementById('card3DescDisplay').textContent || '';
+
+  // 마일스톤 로드
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('adminM' + i + 'Title').value =
+      savedData['milestone' + i + 'Title'] || document.getElementById('m' + i + 'Title').textContent || '';
+    document.getElementById('adminM' + i + 'Date').value =
+      savedData['milestone' + i + 'Date'] || document.getElementById('m' + i + 'Date').textContent || '';
+    document.getElementById('adminM' + i + 'Desc').value =
+      savedData['milestone' + i + 'Desc'] || document.getElementById('m' + i + 'Desc').textContent || '';
+  }
 
   // 저장된 미디어도 로드
   if (savedData.media && savedData.media.length > 0) {
@@ -1825,6 +1844,13 @@ function saveAdminChanges() {
     card3Desc: document.getElementById('adminCard3Desc').value
   };
 
+  // 마일스톤 데이터 추가
+  for (let i = 1; i <= 5; i++) {
+    data['milestone' + i + 'Title'] = document.getElementById('adminM' + i + 'Title').value;
+    data['milestone' + i + 'Date'] = document.getElementById('adminM' + i + 'Date').value;
+    data['milestone' + i + 'Desc'] = document.getElementById('adminM' + i + 'Desc').value;
+  }
+
   // 페이지에 즉시 반영
   document.getElementById('projectTitleDisplay').textContent = data.projectTitle;
   document.getElementById('projectDescDisplay').textContent = data.projectDesc;
@@ -1834,6 +1860,13 @@ function saveAdminChanges() {
   document.getElementById('card2DescDisplay').textContent = data.card2Desc;
   document.getElementById('card3TitleDisplay').textContent = data.card3Title;
   document.getElementById('card3DescDisplay').textContent = data.card3Desc;
+
+  // 마일스톤 페이지에 즉시 반영
+  for (let i = 1; i <= 5; i++) {
+    document.getElementById('m' + i + 'Title').textContent = data['milestone' + i + 'Title'];
+    document.getElementById('m' + i + 'Date').textContent = data['milestone' + i + 'Date'];
+    document.getElementById('m' + i + 'Desc').textContent = data['milestone' + i + 'Desc'];
+  }
 
   // localStorage에 저장 (동기화)
   const syncData = JSON.parse(localStorage.getItem('mobed-client-data') || '{}');
@@ -1964,6 +1997,13 @@ function syncToClient() {
     syncTimestamp: new Date().toISOString()
   };
 
+  // 마일스톤 데이터 추가
+  for (let i = 1; i <= 5; i++) {
+    data['milestone' + i + 'Title'] = document.getElementById('adminM' + i + 'Title').value;
+    data['milestone' + i + 'Date'] = document.getElementById('adminM' + i + 'Date').value;
+    data['milestone' + i + 'Desc'] = document.getElementById('adminM' + i + 'Desc').value;
+  }
+
   try {
     localStorage.setItem('mobed-client-data', JSON.stringify(data));
 
@@ -1980,6 +2020,13 @@ function syncToClient() {
     document.getElementById('card3TitleDisplay').textContent = data.card3Title;
     document.getElementById('card3DescDisplay').textContent = data.card3Desc;
 
+    // 마일스톤 페이지에 반영
+    for (let i = 1; i <= 5; i++) {
+      document.getElementById('m' + i + 'Title').textContent = data['milestone' + i + 'Title'];
+      document.getElementById('m' + i + 'Date').textContent = data['milestone' + i + 'Date'];
+      document.getElementById('m' + i + 'Desc').textContent = data['milestone' + i + 'Desc'];
+    }
+
     // 미디어 업데이트 (메모리에서 로드)
     if (window.clientMediaData && window.clientMediaData.length > 0) {
       const mediaGrid = document.getElementById('mediaGrid');
@@ -1993,10 +2040,18 @@ function syncToClient() {
         if (media.type === 'image') {
           element = document.createElement('img');
           element.src = media.data;
+          element.style.width = '100%';
+          element.style.height = '100%';
+          element.style.objectFit = 'contain';
+          element.style.display = 'block';
         } else {
           element = document.createElement('video');
           element.src = media.data;
           element.controls = true;
+          element.style.width = '100%';
+          element.style.height = '100%';
+          element.style.objectFit = 'contain';
+          element.style.display = 'block';
         }
 
         const removeBtn = document.createElement('button');
@@ -2123,6 +2178,43 @@ document.addEventListener('DOMContentLoaded', function() {
         <input type="text" class="admin-form-input" id="adminCard3Title" placeholder="Title">
       </div>
       <input type="text" class="admin-form-input" id="adminCard3Desc" placeholder="Description">
+    </div>
+
+    <!-- Milestones -->
+    <div class="admin-form-group">
+      <label class="admin-form-label">Milestones</label>
+      <div style="border: 1px solid var(--border); border-radius: 6px; padding: 12px; max-height: 300px; overflow-y: auto;">
+        <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+          <div class="admin-form-label" style="margin-bottom: 4px;">Milestone 1</div>
+          <input type="text" class="admin-form-input" id="adminM1Title" placeholder="Title" style="margin-bottom: 4px;">
+          <input type="text" class="admin-form-input" id="adminM1Date" placeholder="Date" style="margin-bottom: 4px;">
+          <input type="text" class="admin-form-input" id="adminM1Desc" placeholder="Description">
+        </div>
+        <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+          <div class="admin-form-label" style="margin-bottom: 4px;">Milestone 2</div>
+          <input type="text" class="admin-form-input" id="adminM2Title" placeholder="Title" style="margin-bottom: 4px;">
+          <input type="text" class="admin-form-input" id="adminM2Date" placeholder="Date" style="margin-bottom: 4px;">
+          <input type="text" class="admin-form-input" id="adminM2Desc" placeholder="Description">
+        </div>
+        <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+          <div class="admin-form-label" style="margin-bottom: 4px;">Milestone 3</div>
+          <input type="text" class="admin-form-input" id="adminM3Title" placeholder="Title" style="margin-bottom: 4px;">
+          <input type="text" class="admin-form-input" id="adminM3Date" placeholder="Date" style="margin-bottom: 4px;">
+          <input type="text" class="admin-form-input" id="adminM3Desc" placeholder="Description">
+        </div>
+        <div style="margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+          <div class="admin-form-label" style="margin-bottom: 4px;">Milestone 4</div>
+          <input type="text" class="admin-form-input" id="adminM4Title" placeholder="Title" style="margin-bottom: 4px;">
+          <input type="text" class="admin-form-input" id="adminM4Date" placeholder="Date" style="margin-bottom: 4px;">
+          <input type="text" class="admin-form-input" id="adminM4Desc" placeholder="Description">
+        </div>
+        <div style="margin-bottom: 0;">
+          <div class="admin-form-label" style="margin-bottom: 4px;">Milestone 5</div>
+          <input type="text" class="admin-form-input" id="adminM5Title" placeholder="Title" style="margin-bottom: 4px;">
+          <input type="text" class="admin-form-input" id="adminM5Date" placeholder="Date" style="margin-bottom: 4px;">
+          <input type="text" class="admin-form-input" id="adminM5Desc" placeholder="Description">
+        </div>
+      </div>
     </div>
 
     <!-- Media Upload -->
