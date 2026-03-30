@@ -357,6 +357,67 @@
   .admin-media-replace:hover {
     background: #3b82f6;
   }
+  .admin-thumb-btn {
+    position: absolute;
+    bottom: 2px;
+    left: 2px;
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: 9px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    transition: all 0.2s;
+    z-index: 5;
+  }
+  .admin-thumb-btn:hover {
+    background: #8b5cf6;
+  }
+  /* 클라이언트 비디오 썸네일 오버레이 */
+  .video-thumb-wrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+  }
+  .video-thumb-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+  }
+  .video-play-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 48px;
+    height: 48px;
+    background: rgba(0,0,0,0.6);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    transition: background 0.2s;
+  }
+  .video-thumb-wrap:hover .video-play-overlay {
+    background: rgba(232,113,58,0.8);
+  }
+  .video-play-overlay::after {
+    content: '';
+    display: block;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 10px 0 10px 18px;
+    border-color: transparent transparent transparent #fff;
+    margin-left: 3px;
+  }
 
   /* ===== TITLE PAGE ===== */
   .title-page {
@@ -1765,6 +1826,34 @@ function loadSyncedData() {
         if (media.type === 'image') {
           element = document.createElement('img');
           element.src = media.data;
+        } else if (media.thumbnail) {
+          // 커스텀 썸네일이 있는 영상: 썸네일 + 재생 버튼 오버레이
+          element = document.createElement('div');
+          element.className = 'video-thumb-wrap';
+          element.innerHTML = '<img src="' + media.thumbnail + '" alt="thumbnail"><div class="video-play-overlay"></div>';
+          element.dataset.videoSrc = media.data;
+          element.onclick = function() {
+            var wrap = this;
+            var video = document.createElement('video');
+            video.src = wrap.dataset.videoSrc;
+            video.controls = true;
+            video.playsInline = true;
+            video.preload = 'metadata';
+            video.style.width = '100%';
+            video.style.height = '100%';
+            video.style.objectFit = 'contain';
+            video.style.background = '#000';
+            video.addEventListener('ended', function() {
+              this.currentTime = 0;
+              this.pause();
+              // 영상 끝나면 다시 썸네일로 복원
+              wrap.style.display = '';
+              video.remove();
+            });
+            wrap.parentElement.appendChild(video);
+            wrap.style.display = 'none';
+            video.play();
+          };
         } else {
           element = document.createElement('video');
           element.src = media.data;
@@ -2308,14 +2397,22 @@ function renderAdminMediaGrid() {
     let element;
     if (media.type === 'image') {
       element = `<img src="${media.data}" alt="media">`;
+    } else if (media.thumbnail) {
+      element = `<img src="${media.thumbnail}" alt="thumbnail" style="width:100%; height:100%; object-fit:contain; background:#000;">`;
     } else {
       element = `<video src="${media.data}" style="width:100%; height:100%; object-fit:contain;" preload="metadata" onended="this.currentTime=0;this.load();"></video>`;
     }
 
-    mediaItem.innerHTML = element + `
+    var btnsHtml = `
       <button class="admin-media-remove" onclick="removeAdminMedia(${index})">X</button>
       <button class="admin-media-replace" onclick="triggerReplaceMedia(${index})">↻</button>
     `;
+    // 영상일 때 썸네일 버튼 추가
+    if (media.type === 'video') {
+      btnsHtml += `<button class="admin-thumb-btn" onclick="triggerThumbUpload(${index})">` +
+        (media.thumbnail ? '🖼 썸네일 변경' : '🖼 썸네일') + `</button>`;
+    }
+    mediaItem.innerHTML = element + btnsHtml;
 
     // 교체용 숨겨진 file input
     var replaceInput = document.createElement('input');
@@ -2325,6 +2422,17 @@ function renderAdminMediaGrid() {
     replaceInput.id = 'replaceInput_' + index;
     replaceInput.onchange = function() { replaceMedia(index, this.files); };
     mediaItem.appendChild(replaceInput);
+
+    // 썸네일용 숨겨진 file input
+    if (media.type === 'video') {
+      var thumbInput = document.createElement('input');
+      thumbInput.type = 'file';
+      thumbInput.accept = 'image/*';
+      thumbInput.style.display = 'none';
+      thumbInput.id = 'thumbInput_' + index;
+      thumbInput.onchange = function() { uploadThumbnail(index, this.files); };
+      mediaItem.appendChild(thumbInput);
+    }
 
     // 캡션 입력란 추가
     var captionInput = document.createElement('input');
@@ -2421,6 +2529,45 @@ function handleAdminDragEnd(e) {
 // 교체 버튼 → 파일 선택 창 열기
 function triggerReplaceMedia(index) {
   document.getElementById('replaceInput_' + index).click();
+}
+
+function triggerThumbUpload(index) {
+  document.getElementById('thumbInput_' + index).click();
+}
+
+function uploadThumbnail(index, files) {
+  if (!files || files.length === 0) return;
+  var file = files[0];
+  if (!file.type.startsWith('image/')) {
+    showToast('⚠ 이미지 파일만 가능합니다');
+    return;
+  }
+  showToast('🖼 썸네일 업로드 중...');
+
+  // 이미지를 리사이즈하여 base64로 변환 (썸네일은 작게)
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var maxW = 640;
+      var scale = Math.min(1, maxW / img.width);
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      var thumbData = canvas.toDataURL('image/jpeg', 0.85);
+
+      // Firebase에 thumbnail 필드만 업데이트
+      db.ref('clientData/media/' + index + '/thumbnail').set(thumbData).then(function() {
+        showToast('✓ 썸네일 적용 완료!');
+      }).catch(function(err) {
+        showToast('⚠ 썸네일 실패: ' + err.message);
+      });
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
 }
 
 // 선택한 파일로 해당 인덱스의 미디어 교체
