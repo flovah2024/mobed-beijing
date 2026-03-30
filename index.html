@@ -1835,8 +1835,8 @@ function saveAdminChanges() {
 // (압축 함수 제거됨 - 사용자가 직접 해상도 조절)
 
 // 파일을 DataURL로 읽기 (공통 헬퍼)
-// Firebase 쓰기 제한 (~10MB). base64는 원본의 ~1.37배이므로 원본 ~7MB가 한계
-var FIREBASE_MAX_BYTES = 9 * 1024 * 1024; // 안전하게 9MB
+// Firebase 쓰기 제한 (~10MB per node)
+var FIREBASE_MAX_BYTES = 9 * 1024 * 1024; // 안전 마진 포함
 
 function readFileAsDataURL(file, type) {
   return new Promise(function(resolve, reject) {
@@ -1868,117 +1868,29 @@ function resizeImage(dataUrl, maxWidth, quality) {
 }
 
 // 영상 리사이즈 (canvas + MediaRecorder)
-function resizeVideo(file, scale) {
-  return new Promise(function(resolve, reject) {
-    var video = document.createElement('video');
-    video.muted = true; video.playsInline = true; video.preload = 'auto';
-    var url = URL.createObjectURL(file);
-    video.src = url;
-    console.log('[Video] Loading video...');
-
-    video.onloadedmetadata = function() {
-      var duration = video.duration;
-      var w = Math.round(video.videoWidth * scale);
-      var h = Math.round(video.videoHeight * scale);
-      w = w % 2 === 0 ? w : w - 1;
-      h = h % 2 === 0 ? h : h - 1;
-      if (w < 2) w = 2; if (h < 2) h = 2;
-      console.log('[Video] Metadata loaded:', video.videoWidth + 'x' + video.videoHeight, 'duration:', duration + 's', '→', w + 'x' + h);
-      showToast('🎬 영상 변환: ' + video.videoWidth + 'x' + video.videoHeight + ' → ' + w + 'x' + h + ' (' + duration.toFixed(1) + '초)');
-
-      var canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      var ctx = canvas.getContext('2d');
-
-      var mimeType = 'video/webm;codecs=vp8';
-      if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
-      // 해상도에 비례한 비트레이트 (scale 1.0 → 2.5Mbps, 0.5 → 1Mbps 등)
-      var bitrate = Math.round(2500000 * scale * scale);
-      if (bitrate < 500000) bitrate = 500000;
-      var stream = canvas.captureStream(24);
-      var recorder = new MediaRecorder(stream, { mimeType: mimeType, videoBitsPerSecond: bitrate });
-      var chunks = [];
-      recorder.ondataavailable = function(e) { if (e.data.size > 0) chunks.push(e.data); };
-
-      var stopped = false;
-      recorder.onstop = function() {
-        URL.revokeObjectURL(url);
-        clearInterval(drawInterval);
-        clearInterval(progressInterval);
-        var blob = new Blob(chunks, { type: 'video/webm' });
-        console.log('[Video] Conversion done:', (blob.size / 1024 / 1024).toFixed(1) + 'MB');
-        var reader = new FileReader();
-        reader.onload = function(e2) {
-          resolve({ type: 'video', data: e2.target.result, name: file.name.replace(/\.[^.]+$/, '.webm'), size: blob.size });
-        };
-        reader.readAsDataURL(blob);
-      };
-      recorder.onerror = function() {
-        URL.revokeObjectURL(url); clearInterval(drawInterval); clearInterval(progressInterval);
-        reject(new Error('영상 변환 실패'));
-      };
-
-      var drawInterval, progressInterval;
-
-      function startRecording() {
-        console.log('[Video] Recording started, bitrate:', bitrate);
-        recorder.start(100);
-        video.play().catch(function(e) {
-          console.error('[Video] Play failed:', e);
-          reject(new Error('영상 재생 실패: ' + e.message));
-        });
-
-        drawInterval = setInterval(function() {
-          if (!video.paused && !video.ended) ctx.drawImage(video, 0, 0, w, h);
-        }, 1000 / 24);
-
-        // 진행률 표시
-        progressInterval = setInterval(function() {
-          if (duration > 0) {
-            var pct = Math.round((video.currentTime / duration) * 100);
-            showToast('🎬 영상 변환: ' + pct + '%');
-          }
-        }, 2000);
-      }
-
-      video.onended = function() {
-        ctx.drawImage(video, 0, 0, w, h);
-        setTimeout(function() { if (!stopped) { stopped = true; recorder.stop(); } }, 500);
-      };
-
-      // 안전장치: 영상 길이 + 3초 후 강제 종료
-      var safetyTimeout = setTimeout(function() {
-        if (!stopped) { stopped = true; video.pause(); if (recorder.state === 'recording') recorder.stop(); }
-      }, (duration + 3) * 1000);
-
-      video.onerror = function() { URL.revokeObjectURL(url); clearInterval(drawInterval); clearInterval(progressInterval); reject(new Error('영상 로드 실패')); };
-
-      // canplay 이벤트를 기다린 후 녹화 시작 (중요!)
-      video.currentTime = 0;
-      if (video.readyState >= 3) {
-        startRecording();
-      } else {
-        video.oncanplay = function() {
-          video.oncanplay = null;
-          startRecording();
-        };
-      }
-    };
-
-    video.onerror = function() { URL.revokeObjectURL(url); reject(new Error('영상 파일 로드 실패')); };
-  });
-}
-
-// 모든 파일을 Firebase에 저장 가능하도록 변환
+// 파일을 Firebase에 저장 가능하도록 준비
+// 이미지: JPEG 변환 + 필요시 리사이즈
+// 영상: 원본 그대로 base64 (변환 없음, 확실하게 동작)
 function prepareMediaForFirebase(file, fileType) {
+  var fileSizeMB = (file.size / 1024 / 1024).toFixed(1);
+  // base64는 원본의 약 1.37배
+  var estimatedBase64MB = (file.size * 1.37 / 1024 / 1024).toFixed(1);
+  console.log('[Prepare] ' + file.name + ' type:' + fileType + ' size:' + fileSizeMB + 'MB, estimated base64:' + estimatedBase64MB + 'MB');
+
   if (fileType === 'image') {
-    // 이미지: 항상 JPEG로 변환 (PNG/HEIC/BMP 등 → JPEG, 용량 절약)
-    // 1920px 이하면 해상도 유지, 초과 시 축소
-    showToast('🖼 이미지 변환 중...');
+    showToast('🖼 이미지 처리 중...');
     return readFileAsDataURL(file, 'image').then(function(mediaObj) {
+      // 원본이 Firebase 제한 내면 그대로 사용
+      var rawSize = JSON.stringify(mediaObj).length;
+      if (rawSize <= FIREBASE_MAX_BYTES) {
+        console.log('[Prepare] Image OK as-is:', (rawSize/1024/1024).toFixed(1) + 'MB');
+        return mediaObj;
+      }
+      // 초과 시 리사이즈
+      showToast('⚠ 이미지 크기 초과, 자동 리사이즈 중...');
       var attempts = [
         { maxW: 1920, q: 0.85 },
-        { maxW: 1280, q: 0.75 },
+        { maxW: 1280, q: 0.7 },
         { maxW: 960, q: 0.6 },
         { maxW: 640, q: 0.5 }
       ];
@@ -1988,9 +1900,8 @@ function prepareMediaForFirebase(file, fileType) {
         return resizeImage(mediaObj.data, a.maxW, a.q).then(function(resizedData) {
           var newObj = { type: 'image', data: resizedData, name: mediaObj.name, size: resizedData.length };
           var newSize = JSON.stringify(newObj).length;
-          console.log('[Prepare] Image ' + a.maxW + 'px q' + a.q + ': ' + (newSize / 1024 / 1024).toFixed(1) + 'MB');
           if (newSize <= FIREBASE_MAX_BYTES) {
-            showToast('✓ 이미지 변환 완료 (' + (newSize / 1024 / 1024).toFixed(1) + 'MB)');
+            showToast('✓ 리사이즈 완료 (' + (newSize/1024/1024).toFixed(1) + 'MB)');
             return newObj;
           }
           return tryResize(idx + 1);
@@ -1999,29 +1910,22 @@ function prepareMediaForFirebase(file, fileType) {
       return tryResize(0);
     });
   } else {
-    // 영상: 항상 webm으로 변환 (MOV/MP4 등 → webm, 호환성 + 용량 최적화)
-    // 1단계: 원본 해상도로 변환 시도 → 초과 시 해상도 축소
-    var scales = [1.0, 0.7, 0.5, 0.35, 0.25];
-    function tryVideoConvert(idx) {
-      if (idx >= scales.length) return Promise.reject(new Error('영상이 너무 큽니다. 더 짧거나 낮은 해상도 영상을 사용해주세요.'));
-      var s = scales[idx];
-      if (s === 1.0) {
-        showToast('🎬 영상 webm 변환 중 (원본 해상도)...');
-      } else {
-        showToast('🎬 영상 ' + Math.round(s * 100) + '% 해상도로 리사이즈 중...');
-      }
-      return resizeVideo(file, s).then(function(convertedObj) {
-        var newSize = JSON.stringify(convertedObj).length;
-        console.log('[Prepare] Video scale ' + s + ': ' + (newSize / 1024 / 1024).toFixed(1) + 'MB');
-        if (newSize <= FIREBASE_MAX_BYTES) {
-          showToast('✓ 영상 변환 완료 (' + (newSize / 1024 / 1024).toFixed(1) + 'MB)');
-          return convertedObj;
-        }
-        showToast('⚠ ' + (newSize / 1024 / 1024).toFixed(1) + 'MB 초과, 해상도 줄이는 중...');
-        return tryVideoConvert(idx + 1);
-      });
+    // 영상: 원본 그대로 base64 업로드 (브라우저 변환 불안정 → 제거)
+    // Firebase 제한(~7MB 원본) 초과 시 명확한 에러
+    if (file.size > 7 * 1024 * 1024) {
+      showToast('⚠ 영상 ' + fileSizeMB + 'MB → Firebase 제한(~7MB) 초과! 해상도를 낮춰서 다시 시도해주세요.');
+      return Promise.reject(new Error('영상 파일이 너무 큽니다 (' + fileSizeMB + 'MB). Firebase 무료 플랜은 파일당 ~7MB까지 지원합니다. 해상도를 720p 이하로 낮추거나 영상을 짧게 편집해주세요.'));
     }
-    return tryVideoConvert(0);
+    showToast('🎬 영상 읽는 중... (' + fileSizeMB + 'MB)');
+    return readFileAsDataURL(file, 'video').then(function(mediaObj) {
+      var dataSize = JSON.stringify(mediaObj).length;
+      console.log('[Prepare] Video base64 size:', (dataSize/1024/1024).toFixed(1) + 'MB');
+      if (dataSize <= FIREBASE_MAX_BYTES) {
+        showToast('✓ 영상 준비 완료 (' + (dataSize/1024/1024).toFixed(1) + 'MB)');
+        return mediaObj;
+      }
+      return Promise.reject(new Error('영상 base64가 Firebase 제한 초과 (' + (dataSize/1024/1024).toFixed(1) + 'MB). 해상도를 낮춰주세요.'));
+    });
   }
 }
 
