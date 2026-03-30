@@ -145,7 +145,7 @@
     position: fixed;
     top: 0; right: 0;
     width: 100%;
-    max-width: 450px;
+    max-width: 900px;
     height: 100vh;
     background: var(--black-card);
     border-left: 1px solid var(--border);
@@ -252,9 +252,15 @@
     transition: all 0.2s;
   }
 
-  .admin-upload-zone:hover {
+  .admin-upload-zone:hover,
+  .admin-upload-zone.drag-over {
     border-color: var(--orange);
     background: linear-gradient(135deg, rgba(232,113,58,0.12), rgba(232,113,58,0.08));
+  }
+
+  .admin-upload-zone.drag-over {
+    border-color: var(--orange-light);
+    box-shadow: 0 0 16px rgba(232,113,58,0.2);
   }
 
   .admin-upload-icon {
@@ -600,9 +606,15 @@
     transition: all 0.3s;
   }
 
-  .upload-container:hover {
+  .upload-container:hover,
+  .upload-container.drag-over {
     background: linear-gradient(135deg, rgba(232,113,58,0.12), rgba(232,113,58,0.08));
     border-color: var(--orange);
+  }
+
+  .upload-container.drag-over {
+    border-color: var(--orange-light);
+    box-shadow: 0 0 20px rgba(232,113,58,0.2);
   }
 
   .upload-icon {
@@ -2142,19 +2154,54 @@ function showToast(message) {
 // 어드민 패널 초기화
 document.addEventListener('DOMContentLoaded', function() {
   renderAdminMediaGrid();
-});
 
-// Enter 키로 비밀번호 확인
-document.addEventListener('DOMContentLoaded', function() {
-  const passwordInput = document.getElementById('adminPassword');
+  // Enter 키로 비밀번호 확인
+  var passwordInput = document.getElementById('adminPassword');
   if (passwordInput) {
     passwordInput.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
-        verifyAdminPassword();
-      }
+      if (e.key === 'Enter') verifyAdminPassword();
     });
   }
+
+  // === 드래그 앤 드롭: 어드민 업로드 영역 ===
+  setupDragDrop('adminUploadZone', handleAdminMediaUpload);
+
+  // === 드래그 앤 드롭: 메인 업로드 영역 ===
+  var mainUpload = document.querySelector('.upload-container');
+  if (mainUpload) {
+    mainUpload.id = 'mainUploadZone';
+    setupDragDrop('mainUploadZone', handleFileUpload);
+  }
 });
+
+function setupDragDrop(zoneId, handler) {
+  var zone = document.getElementById(zoneId);
+  if (!zone) return;
+
+  ['dragenter', 'dragover'].forEach(function(evt) {
+    zone.addEventListener(evt, function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.add('drag-over');
+    });
+  });
+
+  ['dragleave', 'drop'].forEach(function(evt) {
+    zone.addEventListener(evt, function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      zone.classList.remove('drag-over');
+    });
+  });
+
+  zone.addEventListener('drop', function(e) {
+    var files = e.dataTransfer.files;
+    if (files.length > 0) {
+      // handler에 event.target.files 형태로 전달
+      handler({ target: { files: files, value: '' } });
+    }
+  });
+}
 </script>
 
 <!-- Admin Button -->
@@ -2256,9 +2303,9 @@ document.addEventListener('DOMContentLoaded', function() {
     <!-- Media Upload -->
     <div class="admin-form-group">
       <label class="admin-form-label">Media</label>
-      <div class="admin-upload-zone" onclick="document.getElementById('adminMediaInput').click()">
+      <div class="admin-upload-zone" id="adminUploadZone" onclick="document.getElementById('adminMediaInput').click()">
         <div class="admin-upload-icon">[ UPLOAD ]</div>
-        <div class="admin-upload-text">Click to upload</div>
+        <div class="admin-upload-text">Click or Drag & Drop</div>
       </div>
       <input type="file" id="adminMediaInput" multiple accept="image/*,video/*" onchange="handleAdminMediaUpload(event)" style="display: none;">
       <div class="admin-media-grid" id="adminMediaGrid"></div>
