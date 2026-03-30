@@ -1308,6 +1308,20 @@
 <!-- ===== MAIN CONTENT ===== -->
 <div class="content-wrap" id="contentWrap">
 
+<div class="container">
+  <!-- Header -->
+  <div class="header" id="headerSection">
+    <div class="header-badge" id="headerBadgeDisplay">AI Content Production</div>
+    <h1 id="projectTitleDisplay" data-ko="MobED 베이징 모터쇼 영상 제작 일정표" data-en="MobED Beijing Motor Show Production Schedule">MobED 베이징 모터쇼 영상 제작 일정표</h1>
+    <p id="projectDescDisplay" data-ko="Beijing Motor Show 2026 — AI 콘텐츠 제작 프로젝트 타임라인" data-en="Beijing Motor Show 2026 — AI Content Production Timeline">Beijing Motor Show 2026 — AI 콘텐츠 제작 프로젝트 타임라인</p>
+    <div class="header-meta">
+      <span id="headerDateDisplay">2026.03.24 — 04.21</span>
+      <span id="headerTag1Display" data-ko="AI 콘텐츠 영상 제작" data-en="AI Content Video Production">AI 콘텐츠 영상 제작</span>
+      <span id="headerTag2Display">Beijing Motor Show</span>
+    </div>
+  </div>
+</div>
+
 <!-- Production Status Bar -->
 <div class="production-status">
   <!-- Production Items Grid -->
@@ -1352,18 +1366,6 @@
 </div>
 
 <div class="container">
-
-  <!-- Header -->
-  <div class="header" id="headerSection">
-    <div class="header-badge">AI Content Production</div>
-    <h1 id="projectTitleDisplay" data-ko="MobED 베이징 모터쇼 영상 제작 일정표" data-en="MobED Beijing Motor Show Production Schedule">MobED 베이징 모터쇼 영상 제작 일정표</h1>
-    <p id="projectDescDisplay" data-ko="Beijing Motor Show 2026 — AI 콘텐츠 제작 프로젝트 타임라인" data-en="Beijing Motor Show 2026 — AI Content Production Timeline">Beijing Motor Show 2026 — AI 콘텐츠 제작 프로젝트 타임라인</p>
-    <div class="header-meta">
-      <span>2026.03.24 — 04.21</span>
-      <span data-ko="AI 콘텐츠 영상 제작" data-en="AI Content Video Production">AI 콘텐츠 영상 제작</span>
-      <span>Beijing Motor Show</span>
-    </div>
-  </div>
 
   <!-- Phase Summary Chips -->
   <div class="phase-bar">
@@ -1675,14 +1677,34 @@ function loadSyncedData() {
 
     console.log('[Firebase] Data received:', data.syncTimestamp);
 
-    // 제목과 설명 업데이트
-    if (data.projectTitle) {
+    // 헤더 정보 업데이트
+    if (data.headerBadge) document.getElementById('headerBadgeDisplay').textContent = data.headerBadge;
+    if (data.headerTitle) {
+      document.getElementById('projectTitleDisplay').textContent = data.headerTitle;
+      document.getElementById('projectTitleDisplay').setAttribute('data-ko', data.headerTitle);
+    } else if (data.projectTitle) {
       document.getElementById('projectTitleDisplay').textContent = data.projectTitle;
       document.getElementById('projectTitleDisplay').setAttribute('data-ko', data.projectTitle);
     }
-    if (data.projectDesc) {
+    if (data.headerDesc) {
+      document.getElementById('projectDescDisplay').textContent = data.headerDesc;
+      document.getElementById('projectDescDisplay').setAttribute('data-ko', data.headerDesc);
+    } else if (data.projectDesc) {
       document.getElementById('projectDescDisplay').textContent = data.projectDesc;
       document.getElementById('projectDescDisplay').setAttribute('data-ko', data.projectDesc);
+    }
+    if (data.headerDate) document.getElementById('headerDateDisplay').textContent = data.headerDate;
+    if (data.headerTag1) document.getElementById('headerTag1Display').textContent = data.headerTag1;
+    if (data.headerTag2) document.getElementById('headerTag2Display').textContent = data.headerTag2;
+
+    // 어드민 필드에도 반영
+    if (document.getElementById('adminHeaderBadge')) {
+      document.getElementById('adminHeaderBadge').value = data.headerBadge || '';
+      document.getElementById('adminHeaderTitle').value = data.headerTitle || data.projectTitle || '';
+      document.getElementById('adminHeaderDesc').value = data.headerDesc || data.projectDesc || '';
+      document.getElementById('adminHeaderDate').value = data.headerDate || '';
+      document.getElementById('adminHeaderTag1').value = data.headerTag1 || '';
+      document.getElementById('adminHeaderTag2').value = data.headerTag2 || '';
     }
 
     // 상단 카드 업데이트
@@ -1926,6 +1948,12 @@ function saveAdminChanges() {
   const data = {
     projectTitle: document.getElementById('adminProjectTitle').value,
     projectDesc: document.getElementById('adminProjectDesc').value,
+    headerBadge: document.getElementById('adminHeaderBadge').value,
+    headerTitle: document.getElementById('adminHeaderTitle').value,
+    headerDesc: document.getElementById('adminHeaderDesc').value,
+    headerDate: document.getElementById('adminHeaderDate').value,
+    headerTag1: document.getElementById('adminHeaderTag1').value,
+    headerTag2: document.getElementById('adminHeaderTag2').value,
     card1Title: document.getElementById('adminCard1Title').value,
     card1Desc: document.getElementById('adminCard1Desc').value,
     card2Title: document.getElementById('adminCard2Title').value,
@@ -1941,9 +1969,16 @@ function saveAdminChanges() {
     data['milestone' + i + 'Desc'] = document.getElementById('adminM' + i + 'Desc').value;
   }
 
+  // 페이지에 즉시 반영 — 헤더
+  if (data.headerBadge) document.getElementById('headerBadgeDisplay').textContent = data.headerBadge;
+  if (data.headerTitle) document.getElementById('projectTitleDisplay').textContent = data.headerTitle;
+  if (data.headerDesc) document.getElementById('projectDescDisplay').textContent = data.headerDesc;
+  if (data.headerDate) document.getElementById('headerDateDisplay').textContent = data.headerDate;
+  if (data.headerTag1) document.getElementById('headerTag1Display').textContent = data.headerTag1;
+  if (data.headerTag2) document.getElementById('headerTag2Display').textContent = data.headerTag2;
   // 페이지에 즉시 반영
-  document.getElementById('projectTitleDisplay').textContent = data.projectTitle;
-  document.getElementById('projectDescDisplay').textContent = data.projectDesc;
+  document.getElementById('projectTitleDisplay').textContent = data.headerTitle || data.projectTitle;
+  document.getElementById('projectDescDisplay').textContent = data.headerDesc || data.projectDesc;
   document.getElementById('card1TitleDisplay').textContent = data.card1Title;
   document.getElementById('card1DescDisplay').textContent = data.card1Desc;
   document.getElementById('card2TitleDisplay').textContent = data.card2Title;
@@ -2126,6 +2161,16 @@ function saveDividerText(index, text) {
   });
 }
 
+function moveDivider(index, direction) {
+  var newIndex = index + direction;
+  if (newIndex < 0 || newIndex >= window.adminMediaData.length) return;
+  // 현재 위치에서 꺼내서 새 위치에 삽입
+  var item = window.adminMediaData.splice(index, 1)[0];
+  window.adminMediaData.splice(newIndex, 0, item);
+  renderAdminMediaGrid();
+  rebuildFirebaseMedia(window.adminMediaData);
+}
+
 function handleAdminMediaUpload(event) {
   var files = event.target ? event.target.files : null;
   if (!files || files.length === 0) {
@@ -2221,6 +2266,24 @@ function renderAdminMediaGrid() {
       line2.className = 'media-divider-line';
       dividerEl.appendChild(line2);
 
+      // 위로 이동 버튼
+      var upBtn = document.createElement('button');
+      upBtn.className = 'admin-divider-remove';
+      upBtn.style.background = 'rgba(59,130,246,0.8)';
+      upBtn.textContent = '▲';
+      upBtn.title = '위로 이동';
+      upBtn.onclick = function() { moveDivider(index, -1); };
+      dividerEl.appendChild(upBtn);
+
+      // 아래로 이동 버튼
+      var downBtn = document.createElement('button');
+      downBtn.className = 'admin-divider-remove';
+      downBtn.style.background = 'rgba(59,130,246,0.8)';
+      downBtn.textContent = '▼';
+      downBtn.title = '아래로 이동';
+      downBtn.onclick = function() { moveDivider(index, 1); };
+      dividerEl.appendChild(downBtn);
+
       var removeBtn = document.createElement('button');
       removeBtn.className = 'admin-divider-remove';
       removeBtn.textContent = 'X';
@@ -2293,36 +2356,66 @@ let adminDraggedIndex = null;
 function handleAdminDragStart(e) {
   adminDraggedIndex = parseInt(this.dataset.index);
   this.style.opacity = '0.5';
+  e.dataTransfer.effectAllowed = 'move';
 }
 
 function handleAdminDragOver(e) {
   e.preventDefault();
-  this.style.borderColor = 'var(--orange)';
+  e.dataTransfer.dropEffect = 'move';
+  // 드롭 위치 표시
+  var rect = this.getBoundingClientRect();
+  var midY = rect.top + rect.height / 2;
+  var midX = rect.left + rect.width / 2;
+  var isDivider = this.classList.contains('admin-media-divider');
+  if (isDivider) {
+    // 구분선은 좌우로 판단
+    if (e.clientX < midX) {
+      this.style.borderLeft = '3px solid var(--orange)';
+      this.style.borderRight = '';
+    } else {
+      this.style.borderRight = '3px solid var(--orange)';
+      this.style.borderLeft = '';
+    }
+  } else {
+    this.style.borderColor = 'var(--orange)';
+  }
 }
 
 function handleAdminDragLeave(e) {
   this.style.borderColor = 'var(--border)';
+  this.style.borderLeft = '';
+  this.style.borderRight = '';
 }
 
 function handleAdminDrop(e) {
   e.preventDefault();
   const targetIndex = parseInt(this.dataset.index);
 
-  if (adminDraggedIndex !== targetIndex) {
-    const temp = window.adminMediaData[adminDraggedIndex];
-    window.adminMediaData[adminDraggedIndex] = window.adminMediaData[targetIndex];
-    window.adminMediaData[targetIndex] = temp;
+  if (adminDraggedIndex !== null && adminDraggedIndex !== targetIndex) {
+    // insert 방식: 원래 위치에서 빼고, 목표 위치에 삽입
+    var item = window.adminMediaData.splice(adminDraggedIndex, 1)[0];
+    var insertAt = targetIndex;
+    // splice 후 인덱스 보정
+    if (adminDraggedIndex < targetIndex) {
+      insertAt = targetIndex - 1;
+    }
+    window.adminMediaData.splice(insertAt, 0, item);
     renderAdminMediaGrid();
-    // Firebase에도 순서 반영
     rebuildFirebaseMedia(window.adminMediaData);
   }
+  this.style.borderColor = 'var(--border)';
+  this.style.borderLeft = '';
+  this.style.borderRight = '';
 }
 
 function handleAdminDragEnd(e) {
-  document.querySelectorAll('.admin-media-item').forEach(item => {
+  document.querySelectorAll('.admin-media-item, .admin-media-divider').forEach(function(item) {
     item.style.opacity = '1';
     item.style.borderColor = 'var(--border)';
+    item.style.borderLeft = '';
+    item.style.borderRight = '';
   });
+  adminDraggedIndex = null;
 }
 
 // 교체 버튼 → 파일 선택 창 열기
@@ -2408,6 +2501,12 @@ function syncToClient() {
   const metaData = {
     projectTitle: document.getElementById('adminProjectTitle').value,
     projectDesc: document.getElementById('adminProjectDesc').value,
+    headerBadge: document.getElementById('adminHeaderBadge').value,
+    headerTitle: document.getElementById('adminHeaderTitle').value,
+    headerDesc: document.getElementById('adminHeaderDesc').value,
+    headerDate: document.getElementById('adminHeaderDate').value,
+    headerTag1: document.getElementById('adminHeaderTag1').value,
+    headerTag2: document.getElementById('adminHeaderTag2').value,
     card1Title: document.getElementById('adminCard1Title').value,
     card1Desc: document.getElementById('adminCard1Desc').value,
     card2Title: document.getElementById('adminCard2Title').value,
@@ -2545,6 +2644,25 @@ function setupDragDrop(zoneId, handler) {
     <button class="admin-close-btn" onclick="closeAdminPanel()">X</button>
   </div>
   <div class="admin-panel-content">
+    <!-- Header Info -->
+    <div style="background: rgba(232,113,58,0.15); padding: 12px; border-radius: 6px; margin-bottom: 16px; border: 1px solid rgba(232,113,58,0.3);">
+      <div class="admin-form-label" style="color: var(--orange); font-size: 13px;">📋 상단 헤더 정보</div>
+      <div class="admin-form-group" style="margin-bottom: 6px;">
+        <input type="text" class="admin-form-input" id="adminHeaderBadge" placeholder="배지 텍스트 (예: AI Content Production)">
+      </div>
+      <div class="admin-form-group" style="margin-bottom: 6px;">
+        <input type="text" class="admin-form-input" id="adminHeaderTitle" placeholder="프로젝트 제목">
+      </div>
+      <div class="admin-form-group" style="margin-bottom: 6px;">
+        <input type="text" class="admin-form-input" id="adminHeaderDesc" placeholder="프로젝트 설명">
+      </div>
+      <div style="display:flex; gap:6px;">
+        <input type="text" class="admin-form-input" id="adminHeaderDate" placeholder="날짜 (예: 2026.03.24 — 04.21)" style="flex:1;">
+        <input type="text" class="admin-form-input" id="adminHeaderTag1" placeholder="태그1" style="flex:1;">
+        <input type="text" class="admin-form-input" id="adminHeaderTag2" placeholder="태그2" style="flex:1;">
+      </div>
+    </div>
+
     <!-- Basic Info -->
     <div class="admin-form-group">
       <label class="admin-form-label">Project Title</label>
