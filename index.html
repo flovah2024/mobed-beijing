@@ -1490,17 +1490,14 @@ function handleFileUpload(event) {
   validFiles.forEach(function(file) {
     var promise;
     if (file.type.startsWith('video/')) {
-      promise = compressVideo(file);
+      promise = compressVideo(file).catch(function(err) {
+        showToast('⚠ 압축 실패, 원본 업로드...');
+        return readFileAsDataURL(file, 'video');
+      });
     } else if (file.size > 2 * 1024 * 1024) {
       promise = compressImage(file);
     } else {
-      promise = new Promise(function(resolve) {
-        var reader = new FileReader();
-        reader.onload = function(e) {
-          resolve({ type: 'image', data: e.target.result, name: file.name, size: file.size });
-        };
-        reader.readAsDataURL(file);
-      });
+      promise = readFileAsDataURL(file, 'image');
     }
 
     promise.then(function(mediaObj) {
@@ -1917,6 +1914,18 @@ function compressImage(file) {
   });
 }
 
+// 파일을 DataURL로 읽기 (공통 헬퍼)
+function readFileAsDataURL(file, type) {
+  return new Promise(function(resolve, reject) {
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      resolve({ type: type, data: e.target.result, name: file.name, size: file.size });
+    };
+    reader.onerror = function() { reject(new Error('파일 읽기 실패')); };
+    reader.readAsDataURL(file);
+  });
+}
+
 function handleAdminMediaUpload(event) {
   const files = event.target.files;
   const validFiles = Array.from(files).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
@@ -1931,29 +1940,26 @@ function handleAdminMediaUpload(event) {
 
     var promise;
     if (file.type.startsWith('video/')) {
-      // 영상은 항상 압축 (1/4 크기)
-      promise = compressVideo(file);
+      // 영상은 압축 시도, 실패 시 원본 fallback
+      promise = compressVideo(file).catch(function(err) {
+        showToast('⚠ 압축 실패 (' + err.message + '), 원본으로 업로드 중...');
+        return readFileAsDataURL(file, 'video');
+      });
     } else {
-      // 이미지는 2MB 초과시 압축, 아니면 그대로
       if (file.size > 2 * 1024 * 1024) {
         promise = compressImage(file);
       } else {
-        promise = new Promise(function(resolve) {
-          var reader = new FileReader();
-          reader.onload = function(e) {
-            resolve({
-              type: 'image',
-              data: e.target.result,
-              name: file.name,
-              size: file.size
-            });
-          };
-          reader.readAsDataURL(file);
-        });
+        promise = readFileAsDataURL(file, 'image');
       }
     }
 
     promise.then(function(mediaObj) {
+      // Firebase 제한 체크 (base64 후 약 9MB 이하)
+      if (mediaObj.data.length > 9 * 1024 * 1024) {
+        showToast('⚠ ' + file.name + ' 너무 큽니다 (' + (mediaObj.data.length / 1024 / 1024).toFixed(1) + 'MB). 더 작은 파일을 사용해주세요.');
+        processedCount++;
+        return;
+      }
       window.adminMediaData.push(mediaObj);
       processedCount++;
       renderAdminMediaGrid();
