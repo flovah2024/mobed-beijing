@@ -1657,6 +1657,11 @@ function loadSyncedData() {
           element.src = media.data;
           element.controls = true;
           element.playsInline = true;
+          element.preload = 'metadata';
+          element.addEventListener('ended', function() {
+            this.currentTime = 0;
+            this.load();
+          });
         }
 
         // 삭제 버튼
@@ -2098,7 +2103,7 @@ function renderAdminMediaGrid() {
     if (media.type === 'image') {
       element = `<img src="${media.data}" alt="media">`;
     } else {
-      element = `<video src="${media.data}" style="width:100%; height:100%; object-fit:contain;"></video>`;
+      element = `<video src="${media.data}" style="width:100%; height:100%; object-fit:contain;" preload="metadata" onended="this.currentTime=0;this.load();"></video>`;
     }
 
     mediaItem.innerHTML = element + `
