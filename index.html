@@ -783,6 +783,77 @@
     border-color: #ef4444;
   }
 
+  /* 구분선 (divider) */
+  .media-divider {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+  }
+  .media-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .media-divider-text {
+    color: var(--orange);
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+  }
+  .media-divider-input {
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--orange);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 10px;
+    outline: none;
+    text-align: center;
+    min-width: 120px;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .media-divider-input::placeholder {
+    color: var(--text-muted);
+    font-weight: 400;
+  }
+  .media-divider-input:focus {
+    border-color: var(--orange);
+  }
+  .admin-media-divider {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+    position: relative;
+  }
+  .admin-media-divider .media-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .admin-divider-remove {
+    background: rgba(239,68,68,0.8);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 18px;
+    height: 18px;
+    font-size: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .admin-divider-remove:hover {
+    background: #ef4444;
+  }
+
   @media (max-width: 900px) {
     .media-grid { grid-template-columns: repeat(3, 1fr); }
   }
@@ -1645,6 +1716,26 @@ function loadSyncedData() {
       mediaGrid.innerHTML = '';
 
       mediaArray.forEach(function(media, idx) {
+        // 구분선 타입 처리
+        if (media.type === 'divider') {
+          var dividerEl = document.createElement('div');
+          dividerEl.className = 'media-divider';
+          var line1 = document.createElement('div');
+          line1.className = 'media-divider-line';
+          dividerEl.appendChild(line1);
+          if (media.text) {
+            var textEl = document.createElement('span');
+            textEl.className = 'media-divider-text';
+            textEl.textContent = media.text;
+            dividerEl.appendChild(textEl);
+            var line2 = document.createElement('div');
+            line2.className = 'media-divider-line';
+            dividerEl.appendChild(line2);
+          }
+          mediaGrid.appendChild(dividerEl);
+          return;
+        }
+
         const mediaItem = document.createElement('div');
         mediaItem.className = 'media-item';
 
@@ -1820,13 +1911,13 @@ function loadAdminForm() {
 function firebaseMediaToArray(raw) {
   if (!raw) return [];
   if (Array.isArray(raw)) {
-    return raw.filter(function(m) { return m && m.data; });
+    return raw.filter(function(m) { return m && (m.data || m.type === 'divider'); });
   }
   // Firebase가 객체로 반환하는 경우 (개별 set 사용 시)
   var arr = [];
   var keys = Object.keys(raw).sort(function(a,b){ return parseInt(a) - parseInt(b); });
   keys.forEach(function(key) {
-    if (raw[key] && raw[key].data) arr.push(raw[key]);
+    if (raw[key] && (raw[key].data || raw[key].type === 'divider')) arr.push(raw[key]);
   });
   return arr;
 }
@@ -2015,6 +2106,26 @@ function addPlaceholderImage() {
   });
 }
 
+function addDivider() {
+  var dividerObj = { type: 'divider', data: '', text: '' };
+  showToast('📤 구분선 추가 중...');
+  db.ref('clientData/media').once('value').then(function(snapshot) {
+    var existing = firebaseMediaToArray(snapshot.val());
+    var nextIdx = existing.length;
+    return db.ref('clientData/media/' + nextIdx).set(dividerObj);
+  }).then(function() {
+    showToast('✓ 구분선 추가 완료!');
+  }).catch(function(err) {
+    showToast('⚠ 실패: ' + err.message);
+  });
+}
+
+function saveDividerText(index, text) {
+  db.ref('clientData/media/' + index + '/text').set(text).then(function() {
+    console.log('[Divider] text saved at index', index);
+  });
+}
+
 function handleAdminMediaUpload(event) {
   var files = event.target ? event.target.files : null;
   if (!files || files.length === 0) {
@@ -2081,6 +2192,51 @@ function renderAdminMediaGrid() {
 
   mediaGrid.innerHTML = '';
   window.adminMediaData.forEach((media, index) => {
+    // 구분선 타입 처리
+    if (media.type === 'divider') {
+      var dividerEl = document.createElement('div');
+      dividerEl.className = 'admin-media-divider';
+      dividerEl.dataset.index = index;
+      dividerEl.draggable = true;
+
+      var line1 = document.createElement('div');
+      line1.className = 'media-divider-line';
+      dividerEl.appendChild(line1);
+
+      var textInput = document.createElement('input');
+      textInput.className = 'media-divider-input';
+      textInput.type = 'text';
+      textInput.placeholder = '섹션 제목 입력...';
+      textInput.value = media.text || '';
+      textInput.dataset.idx = index;
+      textInput.onblur = function() {
+        saveDividerText(parseInt(this.dataset.idx), this.value);
+      };
+      textInput.onkeydown = function(e) {
+        if (e.key === 'Enter') this.blur();
+      };
+      dividerEl.appendChild(textInput);
+
+      var line2 = document.createElement('div');
+      line2.className = 'media-divider-line';
+      dividerEl.appendChild(line2);
+
+      var removeBtn = document.createElement('button');
+      removeBtn.className = 'admin-divider-remove';
+      removeBtn.textContent = 'X';
+      removeBtn.onclick = function() { removeAdminMedia(index); };
+      dividerEl.appendChild(removeBtn);
+
+      dividerEl.addEventListener('dragstart', handleAdminDragStart);
+      dividerEl.addEventListener('dragover', handleAdminDragOver);
+      dividerEl.addEventListener('drop', handleAdminDrop);
+      dividerEl.addEventListener('dragleave', handleAdminDragLeave);
+      dividerEl.addEventListener('dragend', handleAdminDragEnd);
+
+      mediaGrid.appendChild(dividerEl);
+      return;
+    }
+
     const mediaItem = document.createElement('div');
     mediaItem.className = 'admin-media-item';
     mediaItem.draggable = true;
@@ -2472,7 +2628,10 @@ function setupDragDrop(zoneId, handler) {
         <div class="admin-upload-text">Click or Drag & Drop</div>
       </div>
       <input type="file" id="adminMediaInput" multiple accept="image/*,video/*" onchange="handleAdminMediaUpload(event)" style="display: none;">
-      <button class="admin-btn" onclick="addPlaceholderImage()" style="margin-top:8px; font-size:12px; padding:8px 16px;">+ 제작중 플레이스홀더 추가</button>
+      <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+        <button class="admin-btn" onclick="addPlaceholderImage()" style="font-size:12px; padding:8px 16px;">+ 제작중 플레이스홀더</button>
+        <button class="admin-btn" onclick="addDivider()" style="font-size:12px; padding:8px 16px;">+ 구분선 추가</button>
+      </div>
       <div class="admin-media-grid" id="adminMediaGrid"></div>
     </div>
 
