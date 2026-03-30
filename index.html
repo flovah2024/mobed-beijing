@@ -660,19 +660,24 @@
     max-width: 1200px;
     margin: 40px auto 0;
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
     padding: 0 20px;
   }
 
   .media-item {
-    width: 100%;
-    aspect-ratio: 16 / 9;
     background: var(--black-card);
     border: 1px solid var(--border);
-    border-radius: 12px;
+    border-radius: 10px;
     overflow: hidden;
     position: relative;
+  }
+
+  .media-item .media-thumb {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    position: relative;
+    overflow: hidden;
   }
 
   .media-item img,
@@ -681,19 +686,46 @@
     height: 100%;
     object-fit: contain;
     display: block;
+    background: #000;
+  }
+
+  .media-item .media-caption {
+    padding: 8px 10px;
+    font-size: 11px;
+    color: var(--text);
+    line-height: 1.4;
+    min-height: 20px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .media-item .media-caption-input {
+    width: 100%;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-size: 11px;
+    font-family: 'Noto Sans KR', sans-serif;
+    padding: 8px 10px;
+    outline: none;
+    border-top: 1px solid var(--border-subtle);
+    resize: none;
+  }
+
+  .media-item .media-caption-input::placeholder {
+    color: var(--text-muted);
   }
 
   .media-item .media-delete-btn {
     position: absolute;
-    top: 8px;
-    right: 8px;
-    width: 28px;
-    height: 28px;
+    top: 6px;
+    right: 6px;
+    width: 24px;
+    height: 24px;
     background: rgba(0,0,0,0.7);
     border: 1px solid rgba(255,255,255,0.2);
     border-radius: 50%;
     color: #fff;
-    font-size: 14px;
+    font-size: 12px;
     cursor: pointer;
     display: none;
     align-items: center;
@@ -709,6 +741,13 @@
   .media-item .media-delete-btn:hover {
     background: #ef4444;
     border-color: #ef4444;
+  }
+
+  @media (max-width: 900px) {
+    .media-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+  @media (max-width: 600px) {
+    .media-grid { grid-template-columns: repeat(2, 1fr); }
   }
 
 
@@ -1588,7 +1627,7 @@ function loadSyncedData() {
           element.playsInline = true;
         }
 
-        // 삭제 버튼 (어드민 모드일 때만 동작)
+        // 삭제 버튼
         var delBtn = document.createElement('button');
         delBtn.className = 'media-delete-btn';
         delBtn.textContent = '✕';
@@ -1597,8 +1636,36 @@ function loadSyncedData() {
           deleteMediaFromFirebase(idx);
         };
 
-        mediaItem.appendChild(element);
-        mediaItem.appendChild(delBtn);
+        // 썸네일 영역
+        var thumb = document.createElement('div');
+        thumb.className = 'media-thumb';
+        thumb.appendChild(element);
+        thumb.appendChild(delBtn);
+        mediaItem.appendChild(thumb);
+
+        // 캡션 (어드민 패널 열려있으면 입력 가능, 아니면 텍스트만)
+        var isAdmin = document.getElementById('adminPanel') && document.getElementById('adminPanel').classList.contains('active');
+        if (isAdmin) {
+          var captionInput = document.createElement('input');
+          captionInput.className = 'media-caption-input';
+          captionInput.type = 'text';
+          captionInput.placeholder = 'Add caption...';
+          captionInput.value = media.caption || '';
+          captionInput.dataset.idx = idx;
+          captionInput.onblur = function() {
+            saveMediaCaption(parseInt(this.dataset.idx), this.value);
+          };
+          captionInput.onkeydown = function(e) {
+            if (e.key === 'Enter') this.blur();
+          };
+          mediaItem.appendChild(captionInput);
+        } else if (media.caption) {
+          var captionDiv = document.createElement('div');
+          captionDiv.className = 'media-caption';
+          captionDiv.textContent = media.caption;
+          mediaItem.appendChild(captionDiv);
+        }
+
         mediaGrid.appendChild(mediaItem);
       });
 
@@ -2068,6 +2135,13 @@ function deleteMediaFromFirebase(index) {
         showToast('삭제 오류: ' + err.message);
       });
     }
+  });
+}
+
+// 캡션 저장
+function saveMediaCaption(index, caption) {
+  db.ref('clientData/media/' + index + '/caption').set(caption).then(function() {
+    if (caption) showToast('✓ 캡션 저장됨');
   });
 }
 
