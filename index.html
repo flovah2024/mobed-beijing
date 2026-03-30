@@ -1527,17 +1527,7 @@ function handleFileUpload(event) {
   const validFiles = Array.from(files).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
 
   validFiles.forEach(function(file) {
-    var promise;
-    if (file.type.startsWith('video/')) {
-      promise = compressVideo(file).catch(function(err) {
-        showToast('⚠ 압축 실패, 원본 업로드...');
-        return readFileAsDataURL(file, 'video');
-      });
-    } else if (file.size > 2 * 1024 * 1024) {
-      promise = compressImage(file);
-    } else {
-      promise = readFileAsDataURL(file, 'image');
-    }
+    var promise = readFileAsDataURL(file, file.type.startsWith('video/') ? 'video' : 'image');
 
     promise.then(function(mediaObj) {
       window.adminMediaData.push(mediaObj);
@@ -1819,7 +1809,7 @@ function saveAdminChanges() {
 function compressVideo(file) {
   return new Promise(function(resolve, reject) {
     var originalMB = (file.size / 1024 / 1024).toFixed(1);
-    showToast('🎬 영상 압축 중... (' + originalMB + 'MB → 약 ' + (originalMB / 4).toFixed(1) + 'MB)');
+    showToast('🎬 영상 압축 중... (' + originalMB + 'MB → 약 ' + (originalMB / 2).toFixed(1) + 'MB)');
 
     var video = document.createElement('video');
     video.muted = true;
@@ -1831,8 +1821,8 @@ function compressVideo(file) {
 
     video.onloadedmetadata = function() {
       var duration = video.duration;
-      // 해상도를 절반으로 줄임 (면적 1/4)
-      var scale = 0.5;
+      // 해상도 줄임 (0.7배 = 면적 약 1/2)
+      var scale = 0.7;
       var w = Math.round(video.videoWidth * scale);
       var h = Math.round(video.videoHeight * scale);
       if (w > 1280) { var r = 1280 / w; w = 1280; h = Math.round(h * r); }
@@ -1842,7 +1832,7 @@ function compressVideo(file) {
       canvas.height = h;
       var ctx = canvas.getContext('2d');
 
-      var targetBitrate = Math.min(1000000, file.size * 8 / duration / 4);
+      var targetBitrate = Math.min(2500000, file.size * 8 / duration / 2);
       var mimeType = 'video/webm;codecs=vp8';
       if (!MediaRecorder.isTypeSupported(mimeType)) {
         mimeType = 'video/webm';
@@ -2004,21 +1994,9 @@ function handleAdminMediaUpload(event) {
 
   validFiles.forEach(function(file) {
     var originalMB = (file.size / 1024 / 1024).toFixed(1);
+    showToast('📁 ' + file.name + ' (' + originalMB + 'MB) 읽는 중...');
 
-    var promise;
-    if (file.type.startsWith('video/')) {
-      // 영상은 압축 시도, 실패 시 원본 fallback
-      promise = compressVideo(file).catch(function(err) {
-        showToast('⚠ 압축 실패 (' + err.message + '), 원본으로 업로드 중...');
-        return readFileAsDataURL(file, 'video');
-      });
-    } else {
-      if (file.size > 2 * 1024 * 1024) {
-        promise = compressImage(file);
-      } else {
-        promise = readFileAsDataURL(file, 'image');
-      }
-    }
+    var promise = readFileAsDataURL(file, file.type.startsWith('video/') ? 'video' : 'image');
 
     promise.then(function(mediaObj) {
       // Firebase 제한 체크 (base64 후 약 9MB 이하)
