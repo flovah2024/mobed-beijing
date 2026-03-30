@@ -281,7 +281,6 @@
     background: rgba(255,255,255,0.03);
     border: 1px solid var(--border);
     aspect-ratio: 1;
-    cursor: grab;
   }
 
   .admin-media-item img,
@@ -646,99 +645,31 @@
   }
 
   .media-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 16px;
-    margin-top: 40px;
-    align-items: start;
+    max-width: 1200px;
+    margin: 40px auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
 
   .media-item {
+    width: 100%;
+    aspect-ratio: 16 / 9;
     background: var(--black-card);
     border: 1px solid var(--border);
     border-radius: 12px;
     overflow: hidden;
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 300px;
-    cursor: grab;
-  }
-
-  .media-item.dragging {
-    cursor: grabbing;
-    opacity: 0.9;
   }
 
   .media-item img,
   .media-item video {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    object-fit: cover;
     display: block;
-    flex: 1;
-    min-height: 0;
-    min-width: 0;
   }
 
-  .media-remove {
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(0,0,0,0.7);
-    color: #fff;
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    cursor: pointer;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s;
-    z-index: 10;
-  }
-
-  .media-remove:hover {
-    background: var(--orange);
-  }
-
-  .media-controls {
-    position: absolute;
-    bottom: 8px;
-    left: 8px;
-    display: none;
-    flex-direction: column;
-    gap: 4px;
-    z-index: 10;
-  }
-
-  .media-item:hover .media-controls {
-    display: flex;
-  }
-
-  .position-btn {
-    background: rgba(232,113,58,0.8);
-    color: #fff;
-    border: none;
-    border-radius: 4px;
-    width: 24px;
-    height: 24px;
-    cursor: pointer;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-  }
-
-  .position-btn:hover {
-    background: var(--orange);
-    transform: scale(1.1);
-  }
 
   .container {
     max-width: 1200px;
@@ -1493,13 +1424,24 @@ function handleFileUpload(event) {
   const files = event.target.files;
   const mediaGrid = document.getElementById('mediaGrid');
 
+  if (!window.adminMediaData) {
+    window.adminMediaData = [];
+  }
+
   for (const file of files) {
     if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
       const reader = new FileReader();
       reader.onload = function(e) {
+        // adminMediaData에 저장 (syncToClient에서 사용)
+        window.adminMediaData.push({
+          type: file.type.startsWith('image/') ? 'image' : 'video',
+          data: e.target.result,
+          name: file.name,
+          size: file.size
+        });
+
         const mediaItem = document.createElement('div');
         mediaItem.className = 'media-item';
-        mediaItem.style.transformOrigin = 'center';
 
         let mediaElement;
         if (file.type.startsWith('image/')) {
@@ -1511,43 +1453,7 @@ function handleFileUpload(event) {
           mediaElement.controls = true;
         }
 
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'media-remove';
-        removeBtn.innerHTML = '✕';
-        removeBtn.onclick = function(e) {
-          e.stopPropagation();
-          mediaItem.remove();
-        };
-
-        // Position controls
-        const controlsDiv = document.createElement('div');
-        controlsDiv.className = 'media-controls';
-
-        const directions = [
-          { symbol: '↑', action: 'up' },
-          { symbol: '↓', action: 'down' },
-          { symbol: '←', action: 'left' },
-          { symbol: '→', action: 'right' }
-        ];
-
-        directions.forEach(dir => {
-          const btn = document.createElement('button');
-          btn.className = 'position-btn';
-          btn.innerHTML = dir.symbol;
-          btn.onclick = function(e) {
-            e.stopPropagation();
-            adjustMediaPosition(mediaElement, dir.action);
-          };
-          controlsDiv.appendChild(btn);
-        });
-
         mediaItem.appendChild(mediaElement);
-        mediaItem.appendChild(removeBtn);
-        mediaItem.appendChild(controlsDiv);
-
-        // Make media item draggable for repositioning
-        makeMediaDraggable(mediaItem, mediaElement);
-
         mediaGrid.appendChild(mediaItem);
       };
       reader.readAsDataURL(file);
@@ -1556,70 +1462,6 @@ function handleFileUpload(event) {
 
   // Reset input
   event.target.value = '';
-}
-
-// Function to adjust media position within its container
-function adjustMediaPosition(mediaElement, direction) {
-  let offsetX = parseInt(mediaElement.style.offsetX || 0);
-  let offsetY = parseInt(mediaElement.style.offsetY || 0);
-  const step = 10;
-
-  switch(direction) {
-    case 'up':
-      offsetY -= step;
-      break;
-    case 'down':
-      offsetY += step;
-      break;
-    case 'left':
-      offsetX -= step;
-      break;
-    case 'right':
-      offsetX += step;
-      break;
-  }
-
-  mediaElement.style.offsetX = offsetX;
-  mediaElement.style.offsetY = offsetY;
-  mediaElement.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-}
-
-// Function to make media items draggable
-function makeMediaDraggable(container, mediaElement) {
-  let isDragging = false;
-  let startX, startY;
-  let offsetX = 0, offsetY = 0;
-
-  container.addEventListener('mousedown', function(e) {
-    if (e.target.classList.contains('position-btn') || e.target.classList.contains('media-remove')) return;
-    isDragging = true;
-    startX = e.clientX;
-    startY = e.clientY;
-    container.classList.add('dragging');
-  });
-
-  document.addEventListener('mousemove', function(e) {
-    if (!isDragging) return;
-    const deltaX = e.clientX - startX;
-    const deltaY = e.clientY - startY;
-
-    offsetX += deltaX;
-    offsetY += deltaY;
-
-    mediaElement.style.offsetX = offsetX;
-    mediaElement.style.offsetY = offsetY;
-    mediaElement.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
-
-    startX = e.clientX;
-    startY = e.clientY;
-  });
-
-  document.addEventListener('mouseup', function() {
-    if (isDragging) {
-      isDragging = false;
-      container.classList.remove('dragging');
-    }
-  });
 }
 
 // 어드민에서 동기화된 데이터 로드
@@ -1686,57 +1528,13 @@ function loadSyncedData() {
           if (media.type === 'image') {
             element = document.createElement('img');
             element.src = media.data;
-            element.style.width = '100%';
-            element.style.height = '100%';
-            element.style.objectFit = 'contain';
-            element.style.display = 'block';
-            element.style.flex = '1';
           } else {
             element = document.createElement('video');
             element.src = media.data;
             element.controls = true;
-            element.style.width = '100%';
-            element.style.height = '100%';
-            element.style.objectFit = 'contain';
-            element.style.display = 'block';
-            element.style.flex = '1';
           }
 
-          const removeBtn = document.createElement('button');
-          removeBtn.className = 'media-remove';
-          removeBtn.innerHTML = 'X';
-          removeBtn.onclick = function(e) {
-            e.stopPropagation();
-            mediaItem.remove();
-          };
-
-          const controlsDiv = document.createElement('div');
-          controlsDiv.className = 'media-controls';
-
-          const directions = [
-            { symbol: '↑', action: 'up' },
-            { symbol: '↓', action: 'down' },
-            { symbol: '←', action: 'left' },
-            { symbol: '→', action: 'right' }
-          ];
-
-          directions.forEach(dir => {
-            const btn = document.createElement('button');
-            btn.className = 'position-btn';
-            btn.innerHTML = dir.symbol;
-            btn.onclick = function(e) {
-              e.stopPropagation();
-              adjustMediaPosition(element, dir.action);
-            };
-            controlsDiv.appendChild(btn);
-          });
-
           mediaItem.appendChild(element);
-          mediaItem.appendChild(removeBtn);
-          mediaItem.appendChild(controlsDiv);
-
-          makeMediaDraggable(mediaItem, element);
-
           mediaGrid.appendChild(mediaItem);
         });
       }
@@ -2046,57 +1844,13 @@ function syncToClient() {
         if (media.type === 'image') {
           element = document.createElement('img');
           element.src = media.data;
-          element.style.width = '100%';
-          element.style.height = '100%';
-          element.style.objectFit = 'contain';
-          element.style.display = 'block';
-          element.style.flex = '1';
         } else {
           element = document.createElement('video');
           element.src = media.data;
           element.controls = true;
-          element.style.width = '100%';
-          element.style.height = '100%';
-          element.style.objectFit = 'contain';
-          element.style.display = 'block';
-          element.style.flex = '1';
         }
 
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'media-remove';
-        removeBtn.innerHTML = 'X';
-        removeBtn.onclick = function(e) {
-          e.stopPropagation();
-          mediaItem.remove();
-        };
-
-        const controlsDiv = document.createElement('div');
-        controlsDiv.className = 'media-controls';
-
-        const directions = [
-          { symbol: '↑', action: 'up' },
-          { symbol: '↓', action: 'down' },
-          { symbol: '←', action: 'left' },
-          { symbol: '→', action: 'right' }
-        ];
-
-        directions.forEach(dir => {
-          const btn = document.createElement('button');
-          btn.className = 'position-btn';
-          btn.innerHTML = dir.symbol;
-          btn.onclick = function(e) {
-            e.stopPropagation();
-            adjustMediaPosition(element, dir.action);
-          };
-          controlsDiv.appendChild(btn);
-        });
-
         mediaItem.appendChild(element);
-        mediaItem.appendChild(removeBtn);
-        mediaItem.appendChild(controlsDiv);
-
-        makeMediaDraggable(mediaItem, element);
-
         mediaGrid.appendChild(mediaItem);
       });
     }
