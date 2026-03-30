@@ -1066,6 +1066,22 @@
     .cal-num { font-size: 11px; }
   }
 </style>
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyABbFRVYYm5vceGg90i4Qty7GfivtjSC-0",
+    authDomain: "mobed-beijing.firebaseapp.com",
+    databaseURL: "https://mobed-beijing-default-rtdb.firebaseio.com",
+    projectId: "mobed-beijing",
+    storageBucket: "mobed-beijing.firebasestorage.app",
+    messagingSenderId: "1054040866985",
+    appId: "1:1054040866985:web:8f6e051908ca51efcd69b8"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+</script>
 </head>
 <body>
 
@@ -1464,86 +1480,78 @@ function handleFileUpload(event) {
   event.target.value = '';
 }
 
-// 어드민에서 동기화된 데이터 로드
+// Firebase에서 실시간 데이터 리스닝
 function loadSyncedData() {
-  try {
-    const syncedData = localStorage.getItem('mobed-client-data');
-    console.log('[DEBUG] Synced data from localStorage:', syncedData);
+  // Firebase Realtime Database에서 실시간 리스닝
+  db.ref('clientData').on('value', function(snapshot) {
+    const data = snapshot.val();
+    if (!data) return;
 
-    if (syncedData) {
-      const data = JSON.parse(syncedData);
-      console.log('[DEBUG] Parsed data:', data);
+    console.log('[Firebase] Data received:', data.syncTimestamp);
 
-      // 제목과 설명 업데이트
-      if (data.projectTitle) {
-        document.getElementById('projectTitleDisplay').textContent = data.projectTitle;
-        document.getElementById('projectTitleDisplay').setAttribute('data-ko', data.projectTitle);
-      }
-
-      if (data.projectDesc) {
-        document.getElementById('projectDescDisplay').textContent = data.projectDesc;
-        document.getElementById('projectDescDisplay').setAttribute('data-ko', data.projectDesc);
-      }
-
-      // 상단 카드 업데이트
-      if (data.card1Title) {
-        document.getElementById('card1TitleDisplay').textContent = data.card1Title;
-      }
-      if (data.card1Desc) {
-        document.getElementById('card1DescDisplay').textContent = data.card1Desc;
-      }
-
-      if (data.card2Title) {
-        document.getElementById('card2TitleDisplay').textContent = data.card2Title;
-      }
-      if (data.card2Desc) {
-        document.getElementById('card2DescDisplay').textContent = data.card2Desc;
-      }
-
-      if (data.card3Title) {
-        document.getElementById('card3TitleDisplay').textContent = data.card3Title;
-      }
-      if (data.card3Desc) {
-        document.getElementById('card3DescDisplay').textContent = data.card3Desc;
-      }
-
-      // 로고 업데이트
-      if (data.logo) {
-        const logoImg = document.querySelector('.title-logo-svg');
-        if (logoImg) {
-          logoImg.innerHTML = '<img src="' + data.logo + '" style="width: 120px; height: auto;">';
-        }
-      }
-
-      // 미디어 업데이트 (메모리에서 로드)
-      if (window.clientMediaData && window.clientMediaData.length > 0) {
-        const mediaGrid = document.getElementById('mediaGrid');
-        mediaGrid.innerHTML = '';
-
-        window.clientMediaData.forEach((media) => {
-          const mediaItem = document.createElement('div');
-          mediaItem.className = 'media-item';
-
-          let element;
-          if (media.type === 'image') {
-            element = document.createElement('img');
-            element.src = media.data;
-          } else {
-            element = document.createElement('video');
-            element.src = media.data;
-            element.controls = true;
-          }
-
-          mediaItem.appendChild(element);
-          mediaGrid.appendChild(mediaItem);
-        });
-      }
-    } else {
-      console.log('[DEBUG] No synced data found in localStorage');
+    // 제목과 설명 업데이트
+    if (data.projectTitle) {
+      document.getElementById('projectTitleDisplay').textContent = data.projectTitle;
+      document.getElementById('projectTitleDisplay').setAttribute('data-ko', data.projectTitle);
     }
-  } catch (e) {
-    console.log('[DEBUG] Error loading synced data:', e);
-  }
+    if (data.projectDesc) {
+      document.getElementById('projectDescDisplay').textContent = data.projectDesc;
+      document.getElementById('projectDescDisplay').setAttribute('data-ko', data.projectDesc);
+    }
+
+    // 상단 카드 업데이트
+    if (data.card1Title) document.getElementById('card1TitleDisplay').textContent = data.card1Title;
+    if (data.card1Desc) document.getElementById('card1DescDisplay').textContent = data.card1Desc;
+    if (data.card2Title) document.getElementById('card2TitleDisplay').textContent = data.card2Title;
+    if (data.card2Desc) document.getElementById('card2DescDisplay').textContent = data.card2Desc;
+    if (data.card3Title) document.getElementById('card3TitleDisplay').textContent = data.card3Title;
+    if (data.card3Desc) document.getElementById('card3DescDisplay').textContent = data.card3Desc;
+
+    // 마일스톤 업데이트
+    for (let i = 1; i <= 5; i++) {
+      if (data['milestone' + i + 'Title']) document.getElementById('m' + i + 'Title').textContent = data['milestone' + i + 'Title'];
+      if (data['milestone' + i + 'Date']) document.getElementById('m' + i + 'Date').textContent = data['milestone' + i + 'Date'];
+      if (data['milestone' + i + 'Desc']) document.getElementById('m' + i + 'Desc').textContent = data['milestone' + i + 'Desc'];
+    }
+
+    // 로고 업데이트
+    if (data.logo) {
+      const logoImg = document.querySelector('.title-logo-svg');
+      if (logoImg) {
+        logoImg.innerHTML = '<img src="' + data.logo + '" style="width: 120px; height: auto;">';
+      }
+    }
+
+    // 미디어 업데이트 (Firebase에서 로드)
+    if (data.media && data.media.length > 0) {
+      const mediaGrid = document.getElementById('mediaGrid');
+      mediaGrid.innerHTML = '';
+
+      data.media.forEach(function(media) {
+        const mediaItem = document.createElement('div');
+        mediaItem.className = 'media-item';
+
+        let element;
+        if (media.type === 'image') {
+          element = document.createElement('img');
+          element.src = media.data;
+        } else {
+          element = document.createElement('video');
+          element.src = media.data;
+          element.controls = true;
+        }
+
+        mediaItem.appendChild(element);
+        mediaGrid.appendChild(mediaItem);
+      });
+
+      window.clientMediaData = data.media;
+    } else {
+      // 미디어가 없으면 그리드 비우기
+      document.getElementById('mediaGrid').innerHTML = '';
+      window.clientMediaData = [];
+    }
+  });
 }
 
 // Auto-highlight today's date
@@ -1598,42 +1606,44 @@ function closeAdminPanel() {
 }
 
 function loadAdminForm() {
-  // localStorage에서 저장된 데이터 불러오기
-  const savedData = JSON.parse(localStorage.getItem('mobed-client-data') || '{}');
+  // Firebase에서 저장된 데이터 불러오기
+  db.ref('clientData').once('value').then(function(snapshot) {
+    const savedData = snapshot.val() || {};
 
-  // 기본 정보 로드
-  document.getElementById('adminProjectTitle').value =
-    savedData.projectTitle || document.getElementById('projectTitleDisplay').textContent || '';
-  document.getElementById('adminProjectDesc').value =
-    savedData.projectDesc || document.getElementById('projectDescDisplay').textContent || '';
-  document.getElementById('adminCard1Title').value =
-    savedData.card1Title || document.getElementById('card1TitleDisplay').textContent || '';
-  document.getElementById('adminCard1Desc').value =
-    savedData.card1Desc || document.getElementById('card1DescDisplay').textContent || '';
-  document.getElementById('adminCard2Title').value =
-    savedData.card2Title || document.getElementById('card2TitleDisplay').textContent || '';
-  document.getElementById('adminCard2Desc').value =
-    savedData.card2Desc || document.getElementById('card2DescDisplay').textContent || '';
-  document.getElementById('adminCard3Title').value =
-    savedData.card3Title || document.getElementById('card3TitleDisplay').textContent || '';
-  document.getElementById('adminCard3Desc').value =
-    savedData.card3Desc || document.getElementById('card3DescDisplay').textContent || '';
+    // 기본 정보 로드
+    document.getElementById('adminProjectTitle').value =
+      savedData.projectTitle || document.getElementById('projectTitleDisplay').textContent || '';
+    document.getElementById('adminProjectDesc').value =
+      savedData.projectDesc || document.getElementById('projectDescDisplay').textContent || '';
+    document.getElementById('adminCard1Title').value =
+      savedData.card1Title || document.getElementById('card1TitleDisplay').textContent || '';
+    document.getElementById('adminCard1Desc').value =
+      savedData.card1Desc || document.getElementById('card1DescDisplay').textContent || '';
+    document.getElementById('adminCard2Title').value =
+      savedData.card2Title || document.getElementById('card2TitleDisplay').textContent || '';
+    document.getElementById('adminCard2Desc').value =
+      savedData.card2Desc || document.getElementById('card2DescDisplay').textContent || '';
+    document.getElementById('adminCard3Title').value =
+      savedData.card3Title || document.getElementById('card3TitleDisplay').textContent || '';
+    document.getElementById('adminCard3Desc').value =
+      savedData.card3Desc || document.getElementById('card3DescDisplay').textContent || '';
 
-  // 마일스톤 로드
-  for (let i = 1; i <= 5; i++) {
-    document.getElementById('adminM' + i + 'Title').value =
-      savedData['milestone' + i + 'Title'] || document.getElementById('m' + i + 'Title').textContent || '';
-    document.getElementById('adminM' + i + 'Date').value =
-      savedData['milestone' + i + 'Date'] || document.getElementById('m' + i + 'Date').textContent || '';
-    document.getElementById('adminM' + i + 'Desc').value =
-      savedData['milestone' + i + 'Desc'] || document.getElementById('m' + i + 'Desc').textContent || '';
-  }
+    // 마일스톤 로드
+    for (let i = 1; i <= 5; i++) {
+      document.getElementById('adminM' + i + 'Title').value =
+        savedData['milestone' + i + 'Title'] || document.getElementById('m' + i + 'Title').textContent || '';
+      document.getElementById('adminM' + i + 'Date').value =
+        savedData['milestone' + i + 'Date'] || document.getElementById('m' + i + 'Date').textContent || '';
+      document.getElementById('adminM' + i + 'Desc').value =
+        savedData['milestone' + i + 'Desc'] || document.getElementById('m' + i + 'Desc').textContent || '';
+    }
 
-  // 저장된 미디어도 로드
-  if (savedData.media && savedData.media.length > 0) {
-    window.adminMediaData = savedData.media;
-    renderAdminMediaGrid();
-  }
+    // 저장된 미디어도 로드
+    if (savedData.media && savedData.media.length > 0) {
+      window.adminMediaData = savedData.media;
+      renderAdminMediaGrid();
+    }
+  });
 }
 
 function saveAdminChanges() {
@@ -1672,13 +1682,13 @@ function saveAdminChanges() {
     document.getElementById('m' + i + 'Desc').textContent = data['milestone' + i + 'Desc'];
   }
 
-  // localStorage에 저장 (동기화)
-  const syncData = JSON.parse(localStorage.getItem('mobed-client-data') || '{}');
-  Object.assign(syncData, data);
-  syncData.syncTimestamp = new Date().toISOString();
-  localStorage.setItem('mobed-client-data', JSON.stringify(syncData));
-
-  alert('Changes saved successfully.');
+  // Firebase에 저장 (동기화)
+  data.syncTimestamp = new Date().toISOString();
+  db.ref('clientData').update(data).then(function() {
+    alert('Changes saved to Firebase successfully.');
+  }).catch(function(error) {
+    alert('Save error: ' + error.message);
+  });
 }
 
 function handleAdminMediaUpload(event) {
@@ -1787,7 +1797,7 @@ function removeAdminMedia(index) {
 }
 
 function syncToClient() {
-  // localStorage에는 메타데이터만 저장 (미디어 제외)
+  // Firebase에 모든 데이터 저장 (미디어 포함)
   const data = {
     projectTitle: document.getElementById('adminProjectTitle').value,
     projectDesc: document.getElementById('adminProjectDesc').value,
@@ -1797,7 +1807,6 @@ function syncToClient() {
     card2Desc: document.getElementById('adminCard2Desc').value,
     card3Title: document.getElementById('adminCard3Title').value,
     card3Desc: document.getElementById('adminCard3Desc').value,
-    mediaCount: window.adminMediaData.length,
     syncTimestamp: new Date().toISOString()
   };
 
@@ -1808,61 +1817,33 @@ function syncToClient() {
     data['milestone' + i + 'Desc'] = document.getElementById('adminM' + i + 'Desc').value;
   }
 
-  try {
-    localStorage.setItem('mobed-client-data', JSON.stringify(data));
-
-    // 미디어는 메모리에만 저장 (전역 변수)
-    window.clientMediaData = window.adminMediaData;
-
-    // 즉시 페이지에 반영
-    document.getElementById('projectTitleDisplay').textContent = data.projectTitle;
-    document.getElementById('projectDescDisplay').textContent = data.projectDesc;
-    document.getElementById('card1TitleDisplay').textContent = data.card1Title;
-    document.getElementById('card1DescDisplay').textContent = data.card1Desc;
-    document.getElementById('card2TitleDisplay').textContent = data.card2Title;
-    document.getElementById('card2DescDisplay').textContent = data.card2Desc;
-    document.getElementById('card3TitleDisplay').textContent = data.card3Title;
-    document.getElementById('card3DescDisplay').textContent = data.card3Desc;
-
-    // 마일스톤 페이지에 반영
-    for (let i = 1; i <= 5; i++) {
-      document.getElementById('m' + i + 'Title').textContent = data['milestone' + i + 'Title'];
-      document.getElementById('m' + i + 'Date').textContent = data['milestone' + i + 'Date'];
-      document.getElementById('m' + i + 'Desc').textContent = data['milestone' + i + 'Desc'];
-    }
-
-    // 미디어 업데이트 (메모리에서 로드)
-    if (window.clientMediaData && window.clientMediaData.length > 0) {
-      const mediaGrid = document.getElementById('mediaGrid');
-      mediaGrid.innerHTML = '';
-
-      window.clientMediaData.forEach((media) => {
-        const mediaItem = document.createElement('div');
-        mediaItem.className = 'media-item';
-
-        let element;
-        if (media.type === 'image') {
-          element = document.createElement('img');
-          element.src = media.data;
-        } else {
-          element = document.createElement('video');
-          element.src = media.data;
-          element.controls = true;
-        }
-
-        mediaItem.appendChild(element);
-        mediaGrid.appendChild(mediaItem);
-      });
-    }
-
-    alert('Synced to client site successfully.');
-  } catch (error) {
-    if (error.name === 'QuotaExceededError') {
-      alert('Storage limit exceeded. Try with fewer or smaller media files.');
-    } else {
-      alert('Sync error: ' + error.message);
-    }
+  // 미디어 데이터도 Firebase에 저장
+  if (window.adminMediaData && window.adminMediaData.length > 0) {
+    data.media = window.adminMediaData;
+  } else {
+    data.media = [];
   }
+
+  // 동기화 상태 표시
+  const syncBtn = document.querySelector('.admin-btn[onclick="syncToClient()"]');
+  if (syncBtn) {
+    syncBtn.textContent = 'Syncing...';
+    syncBtn.disabled = true;
+  }
+
+  db.ref('clientData').set(data).then(function() {
+    if (syncBtn) {
+      syncBtn.textContent = 'Sync to Client';
+      syncBtn.disabled = false;
+    }
+    alert('Synced to Firebase successfully! All devices will update in real-time.');
+  }).catch(function(error) {
+    if (syncBtn) {
+      syncBtn.textContent = 'Sync to Client';
+      syncBtn.disabled = false;
+    }
+    alert('Sync error: ' + error.message);
+  });
 }
 
 // 어드민 패널 초기화
