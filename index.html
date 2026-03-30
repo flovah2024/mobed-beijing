@@ -35,6 +35,284 @@
     overflow-x: hidden;
   }
 
+  /* ===== ADMIN MODE ===== */
+  .admin-button {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: var(--orange);
+    color: #0a0a0a;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    z-index: 999;
+    box-shadow: 0 4px 16px rgba(232, 113, 58, 0.3);
+  }
+
+  .admin-button:hover {
+    background: var(--orange-light);
+    transform: translateY(-2px);
+  }
+
+  .admin-modal {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100vh;
+    background: rgba(0,0,0,0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+  }
+
+  .admin-modal.active {
+    display: flex;
+  }
+
+  .admin-modal-content {
+    background: var(--black-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+  }
+
+  .admin-modal-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 16px;
+  }
+
+  .admin-modal-desc {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin-bottom: 24px;
+  }
+
+  .admin-password-input {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 16px;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+
+  .admin-password-input:focus {
+    border-color: var(--orange);
+    outline: none;
+    background: rgba(255,255,255,0.08);
+  }
+
+  .admin-modal-button {
+    width: 100%;
+    padding: 12px;
+    background: var(--orange);
+    color: #0a0a0a;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 8px;
+  }
+
+  .admin-modal-button:hover {
+    background: var(--orange-light);
+  }
+
+  .admin-modal-button.cancel {
+    background: rgba(232,113,58,0.2);
+    color: var(--orange);
+  }
+
+  .admin-modal-button.cancel:hover {
+    background: rgba(232,113,58,0.3);
+  }
+
+  .admin-panel-overlay {
+    position: fixed;
+    top: 0; right: 0;
+    width: 100%;
+    max-width: 450px;
+    height: 100vh;
+    background: var(--black-card);
+    border-left: 1px solid var(--border);
+    display: none;
+    flex-direction: column;
+    z-index: 1500;
+    overflow-y: auto;
+  }
+
+  .admin-panel-overlay.active {
+    display: flex;
+  }
+
+  .admin-panel-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .admin-panel-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--orange);
+  }
+
+  .admin-close-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  .admin-panel-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  .admin-form-group {
+    margin-bottom: 16px;
+  }
+
+  .admin-form-label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 6px;
+  }
+
+  .admin-form-input,
+  .admin-form-textarea {
+    width: 100%;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 12px;
+    transition: all 0.2s;
+  }
+
+  .admin-form-input:focus,
+  .admin-form-textarea:focus {
+    background: rgba(255,255,255,0.08);
+    border-color: var(--orange);
+    outline: none;
+  }
+
+  .admin-form-textarea {
+    resize: vertical;
+    min-height: 60px;
+  }
+
+  .admin-btn {
+    width: 100%;
+    padding: 8px;
+    background: var(--orange);
+    color: #0a0a0a;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 8px;
+  }
+
+  .admin-btn:hover {
+    background: var(--orange-light);
+  }
+
+  .admin-upload-zone {
+    background: linear-gradient(135deg, rgba(232,113,58,0.08), rgba(232,113,58,0.04));
+    border: 2px dashed var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .admin-upload-zone:hover {
+    border-color: var(--orange);
+    background: linear-gradient(135deg, rgba(232,113,58,0.12), rgba(232,113,58,0.08));
+  }
+
+  .admin-upload-icon {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+
+  .admin-upload-text {
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .admin-media-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .admin-media-item {
+    position: relative;
+    border-radius: 6px;
+    overflow: hidden;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    aspect-ratio: 1;
+    cursor: grab;
+  }
+
+  .admin-media-item img,
+  .admin-media-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  .admin-media-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .admin-media-remove:hover {
+    background: var(--orange);
+  }
+
   /* ===== TITLE PAGE ===== */
   .title-page {
     position: fixed;
@@ -304,6 +582,158 @@
     100% {
       transform: translateX(-100%);
     }
+  }
+
+  /* ===== UPLOAD SECTION ===== */
+  .upload-section {
+    max-width: 1200px;
+    margin: 0 auto 40px;
+    display: none; /* 클라이언트 사이트에서는 숨김 */
+  }
+
+  .upload-container {
+    background: linear-gradient(135deg, rgba(232,113,58,0.08), rgba(232,113,58,0.04));
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .upload-container:hover {
+    background: linear-gradient(135deg, rgba(232,113,58,0.12), rgba(232,113,58,0.08));
+    border-color: var(--orange);
+  }
+
+  .upload-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+  }
+
+  .upload-text h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+
+  .upload-text p {
+    font-size: 14px;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+
+  .upload-btn {
+    background: var(--orange);
+    color: #0a0a0a;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 28px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .upload-btn:hover {
+    background: var(--orange-light);
+    transform: translateY(-2px);
+  }
+
+  #uploadInput {
+    display: none;
+  }
+
+  .media-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 40px;
+    align-items: start;
+  }
+
+  .media-item {
+    background: var(--black-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-height: 400px;
+    cursor: grab;
+  }
+
+  .media-item.dragging {
+    cursor: grabbing;
+    opacity: 0.9;
+  }
+
+  .media-item img,
+  .media-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+
+  .media-remove {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.7);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+    z-index: 10;
+  }
+
+  .media-remove:hover {
+    background: var(--orange);
+  }
+
+  .media-controls {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 10;
+  }
+
+  .media-item:hover .media-controls {
+    display: flex;
+  }
+
+  .position-btn {
+    background: rgba(232,113,58,0.8);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .position-btn:hover {
+    background: var(--orange);
+    transform: scale(1.1);
   }
 
   .container {
@@ -723,7 +1153,7 @@
   </div>
 
   <div class="title-cta">
-    <button onclick="showSchedule()">View Schedule</button>
+    <button onclick="showSchedule()">View Project</button>
   </div>
 </div>
 
@@ -740,37 +1170,51 @@
 <div class="production-status">
   <!-- Production Items Grid -->
   <div class="production-items">
-    <div class="production-item">
+    <div class="production-item" id="productionCard1">
       <div class="production-icon"></div>
       <div class="production-info">
-        <h3><span class="status-dot"></span>MobED 어반호퍼</h3>
-        <p>3월 31일부터 생성된 이미지와 영상의 일부를 확인할 수 있습니다.</p>
+        <h3><span class="status-dot"></span><span id="card1TitleDisplay">MobED 어반호퍼</span></h3>
+        <p id="card1DescDisplay">3월 31일부터 생성된 이미지와 영상의 일부를 확인할 수 있습니다.</p>
       </div>
     </div>
-    <div class="production-item">
+    <div class="production-item" id="productionCard2">
       <div class="production-icon"></div>
       <div class="production-info">
-        <h3><span class="status-dot"></span>MobED 골프</h3>
-        <p>3월 31일부터 생성된 이미지와 영상의 일부를 확인할 수 있습니다.</p>
+        <h3><span class="status-dot"></span><span id="card2TitleDisplay">MobED 골프</span></h3>
+        <p id="card2DescDisplay">3월 31일부터 생성된 이미지와 영상의 일부를 확인할 수 있습니다.</p>
       </div>
     </div>
-    <div class="production-item">
+    <div class="production-item" id="productionCard3">
       <div class="production-icon"></div>
       <div class="production-info">
-        <h3><span class="status-dot"></span>보도발표회 영상</h3>
-        <p>작업 대기중</p>
+        <h3><span class="status-dot"></span><span id="card3TitleDisplay">보도발표회 영상</span></h3>
+        <p id="card3DescDisplay">작업 대기중</p>
       </div>
     </div>
+  </div>
+
+  <!-- Upload Section -->
+  <div class="upload-section">
+    <div class="upload-container" onclick="document.getElementById('uploadInput').click()">
+      <div class="upload-icon">[ UPLOAD ]</div>
+      <div class="upload-text">
+        <h3>Video & Image Upload</h3>
+        <p>Upload MobED Urban Hopper and Golf videos and images</p>
+        <button class="upload-btn" type="button">Select File</button>
+      </div>
+    </div>
+    <input type="file" id="uploadInput" multiple accept="image/*,video/*" onchange="handleFileUpload(event)">
+    <div class="media-grid" id="mediaGrid"></div>
   </div>
 </div>
 
 <div class="container">
 
   <!-- Header -->
-  <div class="header">
+  <div class="header" id="headerSection">
     <div class="header-badge">AI Content Production</div>
-    <h1 data-ko="MobED 베이징 모터쇼 영상 제작 일정표" data-en="MobED Beijing Motor Show Production Schedule">MobED 베이징 모터쇼 영상 제작 일정표</h1>
-    <p data-ko="Beijing Motor Show 2026 — AI 콘텐츠 제작 프로젝트 타임라인" data-en="Beijing Motor Show 2026 — AI Content Production Timeline">Beijing Motor Show 2026 — AI 콘텐츠 제작 프로젝트 타임라인</p>
+    <h1 id="projectTitleDisplay" data-ko="MobED 베이징 모터쇼 영상 제작 일정표" data-en="MobED Beijing Motor Show Production Schedule">MobED 베이징 모터쇼 영상 제작 일정표</h1>
+    <p id="projectDescDisplay" data-ko="Beijing Motor Show 2026 — AI 콘텐츠 제작 프로젝트 타임라인" data-en="Beijing Motor Show 2026 — AI Content Production Timeline">Beijing Motor Show 2026 — AI 콘텐츠 제작 프로젝트 타임라인</p>
     <div class="header-meta">
       <span>2026.03.24 — 04.21</span>
       <span data-ko="AI 콘텐츠 영상 제작" data-en="AI Content Video Production">AI 콘텐츠 영상 제작</span>
@@ -1039,6 +1483,256 @@ function setLang(lang) {
   document.documentElement.lang = (lang === 'ko') ? 'ko' : 'en';
 }
 
+// Handle file upload
+function handleFileUpload(event) {
+  const files = event.target.files;
+  const mediaGrid = document.getElementById('mediaGrid');
+
+  for (const file of files) {
+    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const mediaItem = document.createElement('div');
+        mediaItem.className = 'media-item';
+        mediaItem.style.transformOrigin = 'center';
+
+        let mediaElement;
+        if (file.type.startsWith('image/')) {
+          mediaElement = document.createElement('img');
+          mediaElement.src = e.target.result;
+        } else {
+          mediaElement = document.createElement('video');
+          mediaElement.src = e.target.result;
+          mediaElement.controls = true;
+        }
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'media-remove';
+        removeBtn.innerHTML = '✕';
+        removeBtn.onclick = function(e) {
+          e.stopPropagation();
+          mediaItem.remove();
+        };
+
+        // Position controls
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = 'media-controls';
+
+        const directions = [
+          { symbol: '↑', action: 'up' },
+          { symbol: '↓', action: 'down' },
+          { symbol: '←', action: 'left' },
+          { symbol: '→', action: 'right' }
+        ];
+
+        directions.forEach(dir => {
+          const btn = document.createElement('button');
+          btn.className = 'position-btn';
+          btn.innerHTML = dir.symbol;
+          btn.onclick = function(e) {
+            e.stopPropagation();
+            adjustMediaPosition(mediaElement, dir.action);
+          };
+          controlsDiv.appendChild(btn);
+        });
+
+        mediaItem.appendChild(mediaElement);
+        mediaItem.appendChild(removeBtn);
+        mediaItem.appendChild(controlsDiv);
+
+        // Make media item draggable for repositioning
+        makeMediaDraggable(mediaItem, mediaElement);
+
+        mediaGrid.appendChild(mediaItem);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Reset input
+  event.target.value = '';
+}
+
+// Function to adjust media position within its container
+function adjustMediaPosition(mediaElement, direction) {
+  let offsetX = parseInt(mediaElement.style.offsetX || 0);
+  let offsetY = parseInt(mediaElement.style.offsetY || 0);
+  const step = 10;
+
+  switch(direction) {
+    case 'up':
+      offsetY -= step;
+      break;
+    case 'down':
+      offsetY += step;
+      break;
+    case 'left':
+      offsetX -= step;
+      break;
+    case 'right':
+      offsetX += step;
+      break;
+  }
+
+  mediaElement.style.offsetX = offsetX;
+  mediaElement.style.offsetY = offsetY;
+  mediaElement.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+}
+
+// Function to make media items draggable
+function makeMediaDraggable(container, mediaElement) {
+  let isDragging = false;
+  let startX, startY;
+  let offsetX = 0, offsetY = 0;
+
+  container.addEventListener('mousedown', function(e) {
+    if (e.target.classList.contains('position-btn') || e.target.classList.contains('media-remove')) return;
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    container.classList.add('dragging');
+  });
+
+  document.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
+
+    offsetX += deltaX;
+    offsetY += deltaY;
+
+    mediaElement.style.offsetX = offsetX;
+    mediaElement.style.offsetY = offsetY;
+    mediaElement.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+
+    startX = e.clientX;
+    startY = e.clientY;
+  });
+
+  document.addEventListener('mouseup', function() {
+    if (isDragging) {
+      isDragging = false;
+      container.classList.remove('dragging');
+    }
+  });
+}
+
+// 어드민에서 동기화된 데이터 로드
+function loadSyncedData() {
+  try {
+    const syncedData = localStorage.getItem('mobed-client-data');
+    console.log('[DEBUG] Synced data from localStorage:', syncedData);
+
+    if (syncedData) {
+      const data = JSON.parse(syncedData);
+      console.log('[DEBUG] Parsed data:', data);
+
+      // 제목과 설명 업데이트
+      if (data.projectTitle) {
+        document.getElementById('projectTitleDisplay').textContent = data.projectTitle;
+        document.getElementById('projectTitleDisplay').setAttribute('data-ko', data.projectTitle);
+      }
+
+      if (data.projectDesc) {
+        document.getElementById('projectDescDisplay').textContent = data.projectDesc;
+        document.getElementById('projectDescDisplay').setAttribute('data-ko', data.projectDesc);
+      }
+
+      // 상단 카드 업데이트
+      if (data.card1Title) {
+        document.getElementById('card1TitleDisplay').textContent = data.card1Title;
+      }
+      if (data.card1Desc) {
+        document.getElementById('card1DescDisplay').textContent = data.card1Desc;
+      }
+
+      if (data.card2Title) {
+        document.getElementById('card2TitleDisplay').textContent = data.card2Title;
+      }
+      if (data.card2Desc) {
+        document.getElementById('card2DescDisplay').textContent = data.card2Desc;
+      }
+
+      if (data.card3Title) {
+        document.getElementById('card3TitleDisplay').textContent = data.card3Title;
+      }
+      if (data.card3Desc) {
+        document.getElementById('card3DescDisplay').textContent = data.card3Desc;
+      }
+
+      // 로고 업데이트
+      if (data.logo) {
+        const logoImg = document.querySelector('.title-logo-svg');
+        if (logoImg) {
+          logoImg.innerHTML = '<img src="' + data.logo + '" style="width: 120px; height: auto;">';
+        }
+      }
+
+      // 미디어 업데이트
+      if (data.media && data.media.length > 0) {
+        const mediaGrid = document.getElementById('mediaGrid');
+        mediaGrid.innerHTML = '';
+
+        data.media.forEach((media) => {
+          const mediaItem = document.createElement('div');
+          mediaItem.className = 'media-item';
+
+          let element;
+          if (media.type === 'image') {
+            element = document.createElement('img');
+            element.src = media.data;
+          } else {
+            element = document.createElement('video');
+            element.src = media.data;
+            element.controls = true;
+          }
+
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'media-remove';
+          removeBtn.innerHTML = '✕';
+          removeBtn.onclick = function(e) {
+            e.stopPropagation();
+            mediaItem.remove();
+          };
+
+          const controlsDiv = document.createElement('div');
+          controlsDiv.className = 'media-controls';
+
+          const directions = [
+            { symbol: '↑', action: 'up' },
+            { symbol: '↓', action: 'down' },
+            { symbol: '←', action: 'left' },
+            { symbol: '→', action: 'right' }
+          ];
+
+          directions.forEach(dir => {
+            const btn = document.createElement('button');
+            btn.className = 'position-btn';
+            btn.innerHTML = dir.symbol;
+            btn.onclick = function(e) {
+              e.stopPropagation();
+              adjustMediaPosition(element, dir.action);
+            };
+            controlsDiv.appendChild(btn);
+          });
+
+          mediaItem.appendChild(element);
+          mediaItem.appendChild(removeBtn);
+          mediaItem.appendChild(controlsDiv);
+
+          makeMediaDraggable(mediaItem, element);
+
+          mediaGrid.appendChild(mediaItem);
+        });
+      }
+    } else {
+      console.log('[DEBUG] No synced data found in localStorage');
+    }
+  } catch (e) {
+    console.log('[DEBUG] Error loading synced data:', e);
+  }
+}
+
 // Auto-highlight today's date
 (function() {
   var now = new Date();
@@ -1050,7 +1744,400 @@ function setLang(lang) {
   if (todayCell) {
     todayCell.classList.add('today');
   }
+
+  // 동기화된 데이터 로드
+  loadSyncedData();
 })();
+
+// Global admin media storage (in-memory, not localStorage)
+window.adminMediaData = [];
+
+// 관리자 모드 함수들
+function showAdminModal() {
+  document.getElementById('adminPasswordModal').classList.add('active');
+  document.getElementById('adminPassword').focus();
+}
+
+function closeAdminModal() {
+  document.getElementById('adminPasswordModal').classList.remove('active');
+  document.getElementById('adminPassword').value = '';
+}
+
+function verifyAdminPassword() {
+  const password = document.getElementById('adminPassword').value;
+  if (password === '1020') {
+    closeAdminModal();
+    openAdminPanel();
+  } else {
+    alert('Password incorrect.');
+    document.getElementById('adminPassword').value = '';
+  }
+}
+
+function openAdminPanel() {
+  document.getElementById('adminPanel').classList.add('active');
+  loadAdminForm();
+}
+
+function closeAdminPanel() {
+  document.getElementById('adminPanel').classList.remove('active');
+}
+
+function loadAdminForm() {
+  // localStorage에서 저장된 데이터 불러오기
+  const savedData = JSON.parse(localStorage.getItem('mobed-client-data') || '{}');
+
+  // 저장된 데이터가 있으면 사용, 없으면 현재 페이지에서 읽기
+  document.getElementById('adminProjectTitle').value =
+    savedData.projectTitle || document.getElementById('projectTitleDisplay').textContent || '';
+  document.getElementById('adminProjectDesc').value =
+    savedData.projectDesc || document.getElementById('projectDescDisplay').textContent || '';
+  document.getElementById('adminCard1Title').value =
+    savedData.card1Title || document.getElementById('card1TitleDisplay').textContent || '';
+  document.getElementById('adminCard1Desc').value =
+    savedData.card1Desc || document.getElementById('card1DescDisplay').textContent || '';
+  document.getElementById('adminCard2Title').value =
+    savedData.card2Title || document.getElementById('card2TitleDisplay').textContent || '';
+  document.getElementById('adminCard2Desc').value =
+    savedData.card2Desc || document.getElementById('card2DescDisplay').textContent || '';
+  document.getElementById('adminCard3Title').value =
+    savedData.card3Title || document.getElementById('card3TitleDisplay').textContent || '';
+  document.getElementById('adminCard3Desc').value =
+    savedData.card3Desc || document.getElementById('card3DescDisplay').textContent || '';
+
+  // 저장된 미디어도 로드
+  if (savedData.media && savedData.media.length > 0) {
+    window.adminMediaData = savedData.media;
+    renderAdminMediaGrid();
+  }
+}
+
+function saveAdminChanges() {
+  const data = {
+    projectTitle: document.getElementById('adminProjectTitle').value,
+    projectDesc: document.getElementById('adminProjectDesc').value,
+    card1Title: document.getElementById('adminCard1Title').value,
+    card1Desc: document.getElementById('adminCard1Desc').value,
+    card2Title: document.getElementById('adminCard2Title').value,
+    card2Desc: document.getElementById('adminCard2Desc').value,
+    card3Title: document.getElementById('adminCard3Title').value,
+    card3Desc: document.getElementById('adminCard3Desc').value
+  };
+
+  // 페이지에 즉시 반영
+  document.getElementById('projectTitleDisplay').textContent = data.projectTitle;
+  document.getElementById('projectDescDisplay').textContent = data.projectDesc;
+  document.getElementById('card1TitleDisplay').textContent = data.card1Title;
+  document.getElementById('card1DescDisplay').textContent = data.card1Desc;
+  document.getElementById('card2TitleDisplay').textContent = data.card2Title;
+  document.getElementById('card2DescDisplay').textContent = data.card2Desc;
+  document.getElementById('card3TitleDisplay').textContent = data.card3Title;
+  document.getElementById('card3DescDisplay').textContent = data.card3Desc;
+
+  // localStorage에 저장 (동기화)
+  const syncData = JSON.parse(localStorage.getItem('mobed-client-data') || '{}');
+  Object.assign(syncData, data);
+  syncData.syncTimestamp = new Date().toISOString();
+  localStorage.setItem('mobed-client-data', JSON.stringify(syncData));
+
+  alert('Changes saved successfully.');
+}
+
+function handleAdminMediaUpload(event) {
+  const files = event.target.files;
+  let uploadCount = 0;
+  const totalFiles = Array.from(files).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/')).length;
+
+  for (const file of files) {
+    if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        window.adminMediaData.push({
+          type: file.type.startsWith('image/') ? 'image' : 'video',
+          data: e.target.result,
+          name: file.name,
+          size: file.size
+        });
+
+        uploadCount++;
+        renderAdminMediaGrid();
+
+        if (uploadCount === totalFiles) {
+          alert('Uploaded ' + uploadCount + ' file(s) successfully.');
+        }
+      };
+      reader.onerror = function() {
+        alert('Error reading file: ' + file.name);
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  // Reset file input
+  event.target.value = '';
+}
+
+function renderAdminMediaGrid() {
+  const mediaGrid = document.getElementById('adminMediaGrid');
+
+  mediaGrid.innerHTML = '';
+  window.adminMediaData.forEach((media, index) => {
+    const mediaItem = document.createElement('div');
+    mediaItem.className = 'admin-media-item';
+    mediaItem.draggable = true;
+    mediaItem.dataset.index = index;
+
+    let element;
+    if (media.type === 'image') {
+      element = `<img src="${media.data}" alt="media">`;
+    } else {
+      element = `<video src="${media.data}" style="width:100%; height:100%; object-fit:contain;"></video>`;
+    }
+
+    mediaItem.innerHTML = element + `
+      <button class="admin-media-remove" onclick="removeAdminMedia(${index})">X</button>
+    `;
+
+    mediaItem.addEventListener('dragstart', handleAdminDragStart);
+    mediaItem.addEventListener('dragover', handleAdminDragOver);
+    mediaItem.addEventListener('drop', handleAdminDrop);
+    mediaItem.addEventListener('dragleave', handleAdminDragLeave);
+    mediaItem.addEventListener('dragend', handleAdminDragEnd);
+
+    mediaGrid.appendChild(mediaItem);
+  });
+}
+
+let adminDraggedIndex = null;
+
+function handleAdminDragStart(e) {
+  adminDraggedIndex = parseInt(this.dataset.index);
+  this.style.opacity = '0.5';
+}
+
+function handleAdminDragOver(e) {
+  e.preventDefault();
+  this.style.borderColor = 'var(--orange)';
+}
+
+function handleAdminDragLeave(e) {
+  this.style.borderColor = 'var(--border)';
+}
+
+function handleAdminDrop(e) {
+  e.preventDefault();
+  const targetIndex = parseInt(this.dataset.index);
+
+  if (adminDraggedIndex !== targetIndex) {
+    const temp = window.adminMediaData[adminDraggedIndex];
+    window.adminMediaData[adminDraggedIndex] = window.adminMediaData[targetIndex];
+    window.adminMediaData[targetIndex] = temp;
+    renderAdminMediaGrid();
+  }
+}
+
+function handleAdminDragEnd(e) {
+  document.querySelectorAll('.admin-media-item').forEach(item => {
+    item.style.opacity = '1';
+    item.style.borderColor = 'var(--border)';
+  });
+}
+
+function removeAdminMedia(index) {
+  window.adminMediaData.splice(index, 1);
+  renderAdminMediaGrid();
+}
+
+function syncToClient() {
+  const data = {
+    projectTitle: document.getElementById('adminProjectTitle').value,
+    projectDesc: document.getElementById('adminProjectDesc').value,
+    card1Title: document.getElementById('adminCard1Title').value,
+    card1Desc: document.getElementById('adminCard1Desc').value,
+    card2Title: document.getElementById('adminCard2Title').value,
+    card2Desc: document.getElementById('adminCard2Desc').value,
+    card3Title: document.getElementById('adminCard3Title').value,
+    card3Desc: document.getElementById('adminCard3Desc').value,
+    media: window.adminMediaData,
+    syncTimestamp: new Date().toISOString()
+  };
+
+  try {
+    localStorage.setItem('mobed-client-data', JSON.stringify(data));
+
+    // 즉시 페이지에 반영
+    document.getElementById('projectTitleDisplay').textContent = data.projectTitle;
+    document.getElementById('projectDescDisplay').textContent = data.projectDesc;
+    document.getElementById('card1TitleDisplay').textContent = data.card1Title;
+    document.getElementById('card1DescDisplay').textContent = data.card1Desc;
+    document.getElementById('card2TitleDisplay').textContent = data.card2Title;
+    document.getElementById('card2DescDisplay').textContent = data.card2Desc;
+    document.getElementById('card3TitleDisplay').textContent = data.card3Title;
+    document.getElementById('card3DescDisplay').textContent = data.card3Desc;
+
+    // 미디어 업데이트
+    if (data.media && data.media.length > 0) {
+      const mediaGrid = document.getElementById('mediaGrid');
+      mediaGrid.innerHTML = '';
+
+      data.media.forEach((media) => {
+        const mediaItem = document.createElement('div');
+        mediaItem.className = 'media-item';
+
+        let element;
+        if (media.type === 'image') {
+          element = document.createElement('img');
+          element.src = media.data;
+        } else {
+          element = document.createElement('video');
+          element.src = media.data;
+          element.controls = true;
+        }
+
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'media-remove';
+        removeBtn.innerHTML = 'X';
+        removeBtn.onclick = function(e) {
+          e.stopPropagation();
+          mediaItem.remove();
+        };
+
+        const controlsDiv = document.createElement('div');
+        controlsDiv.className = 'media-controls';
+
+        const directions = [
+          { symbol: '↑', action: 'up' },
+          { symbol: '↓', action: 'down' },
+          { symbol: '←', action: 'left' },
+          { symbol: '→', action: 'right' }
+        ];
+
+        directions.forEach(dir => {
+          const btn = document.createElement('button');
+          btn.className = 'position-btn';
+          btn.innerHTML = dir.symbol;
+          btn.onclick = function(e) {
+            e.stopPropagation();
+            adjustMediaPosition(element, dir.action);
+          };
+          controlsDiv.appendChild(btn);
+        });
+
+        mediaItem.appendChild(element);
+        mediaItem.appendChild(removeBtn);
+        mediaItem.appendChild(controlsDiv);
+
+        makeMediaDraggable(mediaItem, element);
+
+        mediaGrid.appendChild(mediaItem);
+      });
+    }
+
+    alert('Synced to client site successfully.');
+  } catch (error) {
+    if (error.name === 'QuotaExceededError') {
+      alert('Storage limit exceeded. Try with fewer or smaller media files.');
+    } else {
+      alert('Sync error: ' + error.message);
+    }
+  }
+}
+
+// 어드민 패널 초기화
+document.addEventListener('DOMContentLoaded', function() {
+  renderAdminMediaGrid();
+});
+
+// Enter 키로 비밀번호 확인
+document.addEventListener('DOMContentLoaded', function() {
+  const passwordInput = document.getElementById('adminPassword');
+  if (passwordInput) {
+    passwordInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        verifyAdminPassword();
+      }
+    });
+  }
+});
 </script>
+
+<!-- Admin Button -->
+<button class="admin-button" onclick="showAdminModal()">ADMIN</button>
+
+<!-- Admin Password Modal -->
+<div class="admin-modal" id="adminPasswordModal">
+  <div class="admin-modal-content">
+    <div class="admin-modal-title">Admin Access</div>
+    <div class="admin-modal-desc">Enter password</div>
+    <input type="password" class="admin-password-input" id="adminPassword" placeholder="****" maxlength="4">
+    <button class="admin-modal-button" onclick="verifyAdminPassword()">Enter</button>
+    <button class="admin-modal-button cancel" onclick="closeAdminModal()">Cancel</button>
+  </div>
+</div>
+
+<!-- Admin Panel -->
+<div class="admin-panel-overlay" id="adminPanel">
+  <div class="admin-panel-header">
+    <div class="admin-panel-title">Admin Dashboard</div>
+    <button class="admin-close-btn" onclick="closeAdminPanel()">X</button>
+  </div>
+  <div class="admin-panel-content">
+    <!-- Basic Info -->
+    <div class="admin-form-group">
+      <label class="admin-form-label">Project Title</label>
+      <input type="text" class="admin-form-input" id="adminProjectTitle" placeholder="Project Title">
+    </div>
+
+    <div class="admin-form-group">
+      <label class="admin-form-label">Project Description</label>
+      <textarea class="admin-form-textarea" id="adminProjectDesc" placeholder="Project Description"></textarea>
+    </div>
+
+    <!-- Card 1 -->
+    <div style="background: rgba(232,113,58,0.1); padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+      <div class="admin-form-label">Card #1</div>
+      <div class="admin-form-group" style="margin-bottom: 8px;">
+        <input type="text" class="admin-form-input" id="adminCard1Title" placeholder="Title">
+      </div>
+      <input type="text" class="admin-form-input" id="adminCard1Desc" placeholder="Description">
+    </div>
+
+    <!-- Card 2 -->
+    <div style="background: rgba(232,113,58,0.1); padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+      <div class="admin-form-label">Card #2</div>
+      <div class="admin-form-group" style="margin-bottom: 8px;">
+        <input type="text" class="admin-form-input" id="adminCard2Title" placeholder="Title">
+      </div>
+      <input type="text" class="admin-form-input" id="adminCard2Desc" placeholder="Description">
+    </div>
+
+    <!-- Card 3 -->
+    <div style="background: rgba(232,113,58,0.1); padding: 12px; border-radius: 6px; margin-bottom: 16px;">
+      <div class="admin-form-label">Card #3</div>
+      <div class="admin-form-group" style="margin-bottom: 8px;">
+        <input type="text" class="admin-form-input" id="adminCard3Title" placeholder="Title">
+      </div>
+      <input type="text" class="admin-form-input" id="adminCard3Desc" placeholder="Description">
+    </div>
+
+    <!-- Media Upload -->
+    <div class="admin-form-group">
+      <label class="admin-form-label">Media</label>
+      <div class="admin-upload-zone" onclick="document.getElementById('adminMediaInput').click()">
+        <div class="admin-upload-icon">[ UPLOAD ]</div>
+        <div class="admin-upload-text">Click to upload</div>
+      </div>
+      <input type="file" id="adminMediaInput" multiple accept="image/*,video/*" onchange="handleAdminMediaUpload(event)" style="display: none;">
+      <div class="admin-media-grid" id="adminMediaGrid"></div>
+    </div>
+
+    <!-- Buttons -->
+    <div style="padding-top: 16px; border-top: 1px solid var(--border);">
+      <button class="admin-btn" onclick="saveAdminChanges()">Save Changes</button>
+      <button class="admin-btn" onclick="syncToClient()">Sync to Client</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
