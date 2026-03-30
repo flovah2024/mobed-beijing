@@ -647,19 +647,21 @@
   .media-grid {
     max-width: 1200px;
     margin: 40px auto 0;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    padding: 0 20px;
   }
 
   .media-item {
     width: 100%;
-    aspect-ratio: 16 / 9;
+    aspect-ratio: 9 / 16;
     background: var(--black-card);
     border: 1px solid var(--border);
     border-radius: 12px;
     overflow: hidden;
     position: relative;
+    max-height: 420px;
   }
 
   .media-item img,
@@ -668,6 +670,34 @@
     height: 100%;
     object-fit: cover;
     display: block;
+  }
+
+  .media-item .media-delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50%;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: all 0.2s;
+  }
+
+  .media-item:hover .media-delete-btn {
+    display: flex;
+  }
+
+  .media-item .media-delete-btn:hover {
+    background: #ef4444;
+    border-color: #ef4444;
   }
 
 
@@ -1535,7 +1565,7 @@ function loadSyncedData() {
       const mediaGrid = document.getElementById('mediaGrid');
       mediaGrid.innerHTML = '';
 
-      data.media.forEach(function(media) {
+      data.media.forEach(function(media, idx) {
         const mediaItem = document.createElement('div');
         mediaItem.className = 'media-item';
 
@@ -1547,15 +1577,26 @@ function loadSyncedData() {
           element = document.createElement('video');
           element.src = media.data;
           element.controls = true;
+          element.playsInline = true;
         }
 
+        // 삭제 버튼 (어드민 모드일 때만 동작)
+        var delBtn = document.createElement('button');
+        delBtn.className = 'media-delete-btn';
+        delBtn.textContent = '✕';
+        delBtn.onclick = function(e) {
+          e.stopPropagation();
+          deleteMediaFromFirebase(idx);
+        };
+
         mediaItem.appendChild(element);
+        mediaItem.appendChild(delBtn);
         mediaGrid.appendChild(mediaItem);
       });
 
       window.clientMediaData = data.media;
+      window.adminMediaData = data.media.slice(); // 어드민 데이터도 동기화
     } else {
-      // 미디어가 없으면 그리드 비우기
       document.getElementById('mediaGrid').innerHTML = '';
       window.clientMediaData = [];
     }
@@ -1985,8 +2026,32 @@ function handleAdminDragEnd(e) {
 }
 
 function removeAdminMedia(index) {
+  var name = window.adminMediaData[index]?.name || 'file';
   window.adminMediaData.splice(index, 1);
   renderAdminMediaGrid();
+  // Firebase에서도 즉시 삭제
+  db.ref('clientData/media').set(window.adminMediaData).then(function() {
+    showToast('✓ ' + name + ' 삭제됨');
+  });
+}
+
+// Firebase에서 미디어 직접 삭제
+function deleteMediaFromFirebase(index) {
+  db.ref('clientData/media').once('value').then(function(snapshot) {
+    var mediaArr = snapshot.val() || [];
+    if (index >= 0 && index < mediaArr.length) {
+      var name = mediaArr[index].name || 'file';
+      mediaArr.splice(index, 1);
+      db.ref('clientData/media').set(mediaArr).then(function() {
+        showToast('✓ ' + name + ' 삭제 완료');
+        // 어드민 데이터도 동기화
+        window.adminMediaData = mediaArr.slice();
+        renderAdminMediaGrid();
+      }).catch(function(err) {
+        showToast('삭제 오류: ' + err.message);
+      });
+    }
+  });
 }
 
 function syncToClient() {
