@@ -1556,13 +1556,16 @@ function handleFileUpload(event) {
 }
 
 // Firebase에서 실시간 데이터 리스닝
+// Sync 진행 중 플래그 (리스너가 adminMediaData 덮어쓰기 방지)
+window._isSyncing = false;
+
 function loadSyncedData() {
   // Firebase Realtime Database에서 실시간 리스닝
   db.ref('clientData').on('value', function(snapshot) {
     const data = snapshot.val();
     if (!data) return;
 
-    console.log('[Firebase] Data received:', data.syncTimestamp);
+    console.log('[Firebase] Data received:', data.syncTimestamp, '(syncing:', window._isSyncing, ')');
 
     // 제목과 설명 업데이트
     if (data.projectTitle) {
@@ -1675,10 +1678,16 @@ function loadSyncedData() {
       });
 
       window.clientMediaData = mediaArray;
-      window.adminMediaData = mediaArray.slice(); // 어드민 데이터도 동기화
+      // Sync 진행 중이 아닐 때만 adminMediaData 업데이트 (sync 중 덮어쓰기 방지)
+      if (!window._isSyncing) {
+        window.adminMediaData = mediaArray.slice();
+      }
     } else {
       document.getElementById('mediaGrid').innerHTML = '';
       window.clientMediaData = [];
+      if (!window._isSyncing) {
+        window.adminMediaData = [];
+      }
     }
   });
 }
@@ -2021,6 +2030,7 @@ function syncToClient() {
     syncBtn.disabled = true;
   }
   showToast('🔄 메타데이터 동기화 중...');
+  window._isSyncing = true;
 
   // 1단계: 메타데이터 먼저 저장 (미디어 제외, 가벼움)
   db.ref('clientData').update(metaData).then(function() {
@@ -2066,6 +2076,7 @@ function syncToClient() {
     uploadNext(0);
 
   }).catch(function(error) {
+    window._isSyncing = false;
     if (syncBtn) {
       syncBtn.textContent = '✗ Error';
       syncBtn.style.background = '#ef4444';
@@ -2098,6 +2109,7 @@ function cleanupExtraMediaNodes(currentCount) {
 }
 
 function syncComplete(syncBtn, uploaded, failed) {
+  window._isSyncing = false;
   if (syncBtn) {
     syncBtn.textContent = '✓ Synced!';
     syncBtn.style.background = '#22c55e';
