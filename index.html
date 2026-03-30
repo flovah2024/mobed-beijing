@@ -1598,11 +1598,26 @@ function loadSyncedData() {
     }
 
     // 미디어 업데이트 (Firebase에서 로드)
-    if (data.media && data.media.length > 0) {
+    // Firebase는 개별 set()으로 저장하면 객체로 반환할 수 있으므로 배열로 변환
+    var mediaArray = [];
+    if (data.media) {
+      if (Array.isArray(data.media)) {
+        mediaArray = data.media.filter(function(m) { return m && m.data; });
+      } else {
+        // 객체인 경우 (Firebase가 sparse array를 객체로 반환)
+        Object.keys(data.media).forEach(function(key) {
+          if (data.media[key] && data.media[key].data) {
+            mediaArray.push(data.media[key]);
+          }
+        });
+      }
+    }
+
+    if (mediaArray.length > 0) {
       const mediaGrid = document.getElementById('mediaGrid');
       mediaGrid.innerHTML = '';
 
-      data.media.forEach(function(media, idx) {
+      mediaArray.forEach(function(media, idx) {
         const mediaItem = document.createElement('div');
         mediaItem.className = 'media-item';
 
@@ -1659,8 +1674,8 @@ function loadSyncedData() {
         mediaGrid.appendChild(mediaItem);
       });
 
-      window.clientMediaData = data.media;
-      window.adminMediaData = data.media.slice(); // 어드민 데이터도 동기화
+      window.clientMediaData = mediaArray;
+      window.adminMediaData = mediaArray.slice(); // 어드민 데이터도 동기화
     } else {
       document.getElementById('mediaGrid').innerHTML = '';
       window.clientMediaData = [];
@@ -1806,170 +1821,7 @@ function saveAdminChanges() {
 }
 
 // 영상 압축 함수 (1/4 크기로 줄임, 원본 길이 100% 유지)
-function compressVideo(file) {
-  return new Promise(function(resolve, reject) {
-    var originalMB = (file.size / 1024 / 1024).toFixed(1);
-    showToast('🎬 영상 압축 중... (' + originalMB + 'MB → 약 ' + (originalMB / 2).toFixed(1) + 'MB)');
-
-    var video = document.createElement('video');
-    video.muted = true;
-    video.playsInline = true;
-    video.preload = 'auto';
-
-    var url = URL.createObjectURL(file);
-    video.src = url;
-
-    video.onloadedmetadata = function() {
-      var duration = video.duration;
-      // 해상도 줄임 (0.7배 = 면적 약 1/2)
-      var scale = 0.7;
-      var w = Math.round(video.videoWidth * scale);
-      var h = Math.round(video.videoHeight * scale);
-      if (w > 1280) { var r = 1280 / w; w = 1280; h = Math.round(h * r); }
-
-      var canvas = document.createElement('canvas');
-      canvas.width = w;
-      canvas.height = h;
-      var ctx = canvas.getContext('2d');
-
-      var targetBitrate = Math.min(2500000, file.size * 8 / duration / 2);
-      var mimeType = 'video/webm;codecs=vp8';
-      if (!MediaRecorder.isTypeSupported(mimeType)) {
-        mimeType = 'video/webm';
-      }
-
-      var stream = canvas.captureStream(24);
-      var recorder = new MediaRecorder(stream, {
-        mimeType: mimeType,
-        videoBitsPerSecond: targetBitrate
-      });
-
-      var chunks = [];
-      recorder.ondataavailable = function(e) {
-        if (e.data.size > 0) chunks.push(e.data);
-      };
-
-      var recorderStopped = false;
-      recorder.onstop = function() {
-        URL.revokeObjectURL(url);
-        clearInterval(drawInterval);
-        var blob = new Blob(chunks, { type: 'video/webm' });
-        var compressedMB = (blob.size / 1024 / 1024).toFixed(1);
-        showToast('✓ 압축 완료: ' + originalMB + 'MB → ' + compressedMB + 'MB (길이: ' + duration.toFixed(1) + '초)');
-
-        var reader = new FileReader();
-        reader.onload = function(e2) {
-          resolve({
-            type: 'video',
-            data: e2.target.result,
-            name: file.name.replace(/\.[^.]+$/, '.webm'),
-            size: blob.size
-          });
-        };
-        reader.readAsDataURL(blob);
-      };
-
-      recorder.onerror = function(e) {
-        URL.revokeObjectURL(url);
-        clearInterval(drawInterval);
-        reject(new Error('압축 실패'));
-      };
-
-      // setInterval로 안정적인 프레임 캡처 (requestAnimationFrame 대신)
-      var drawInterval;
-      var progressShown = 0;
-
-      function startRecording() {
-        recorder.start(100); // 100ms마다 데이터 수집
-        video.play();
-
-        drawInterval = setInterval(function() {
-          if (!video.paused && !video.ended) {
-            ctx.drawImage(video, 0, 0, w, h);
-            // 진행률 표시 (10% 단위)
-            var pct = Math.round((video.currentTime / duration) * 100);
-            if (pct >= progressShown + 20) {
-              progressShown = pct;
-              showToast('🎬 압축 진행: ' + pct + '%');
-            }
-          }
-        }, 1000 / 30); // 30fps 캡처
-      }
-
-      // 영상이 끝나면 마지막 프레임까지 확보 후 정지
-      video.onended = function() {
-        // 마지막 프레임 한번 더 그리기
-        ctx.drawImage(video, 0, 0, w, h);
-        // 500ms 대기 후 recorder 정지 (버퍼 플러시)
-        setTimeout(function() {
-          if (!recorderStopped && recorder.state === 'recording') {
-            recorderStopped = true;
-            recorder.stop();
-          }
-        }, 500);
-      };
-
-      // 안전장치: 영상 길이 + 2초 후에도 안끝나면 강제 종료
-      setTimeout(function() {
-        if (!recorderStopped) {
-          recorderStopped = true;
-          video.pause();
-          if (recorder.state === 'recording') {
-            recorder.stop();
-          }
-        }
-      }, (duration + 2) * 1000);
-
-      video.onerror = function() {
-        URL.revokeObjectURL(url);
-        clearInterval(drawInterval);
-        reject(new Error('영상 로드 실패'));
-      };
-
-      // 영상 처음부터 시작
-      video.currentTime = 0;
-      video.oncanplay = function() {
-        video.oncanplay = null; // 한번만 실행
-        startRecording();
-      };
-    };
-  });
-}
-
-// 이미지 압축 함수
-function compressImage(file) {
-  return new Promise(function(resolve, reject) {
-    var reader = new FileReader();
-    reader.onload = function(e) {
-      var img = new Image();
-      img.onload = function() {
-        var canvas = document.createElement('canvas');
-        var maxW = 1920;
-        var w = img.width;
-        var h = img.height;
-        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
-        canvas.width = w;
-        canvas.height = h;
-        var ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, w, h);
-        var dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-        var originalMB = (file.size / 1024 / 1024).toFixed(1);
-        var compressedMB = (dataUrl.length * 0.75 / 1024 / 1024).toFixed(1);
-        showToast('🖼 이미지: ' + originalMB + 'MB → ' + compressedMB + 'MB');
-        resolve({
-          type: 'image',
-          data: dataUrl,
-          name: file.name,
-          size: Math.round(dataUrl.length * 0.75)
-        });
-      };
-      img.onerror = function() { reject(new Error('이미지 로드 실패')); };
-      img.src = e.target.result;
-    };
-    reader.onerror = function() { reject(new Error('파일 읽기 실패')); };
-    reader.readAsDataURL(file);
-  });
-}
+// (압축 함수 제거됨 - 사용자가 직접 해상도 조절)
 
 // 파일을 DataURL로 읽기 (공통 헬퍼)
 function readFileAsDataURL(file, type) {
@@ -2085,22 +1937,43 @@ function removeAdminMedia(index) {
   var name = window.adminMediaData[index]?.name || 'file';
   window.adminMediaData.splice(index, 1);
   renderAdminMediaGrid();
-  // Firebase에서도 즉시 삭제
-  db.ref('clientData/media').set(window.adminMediaData).then(function() {
+  // Firebase에서 미디어 전체 재구성 (개별 노드로)
+  rebuildFirebaseMedia(window.adminMediaData).then(function() {
     showToast('✓ ' + name + ' 삭제됨');
+  });
+}
+
+function rebuildFirebaseMedia(mediaArr) {
+  // 미디어 노드 전체 삭제 후 개별 업로드
+  return db.ref('clientData/media').remove().then(function() {
+    if (mediaArr.length === 0) return;
+    var promises = mediaArr.map(function(item, idx) {
+      return db.ref('clientData/media/' + idx).set(item);
+    });
+    return Promise.all(promises);
+  }).then(function() {
+    db.ref('clientData/mediaCount').set(mediaArr.length);
   });
 }
 
 // Firebase에서 미디어 직접 삭제
 function deleteMediaFromFirebase(index) {
   db.ref('clientData/media').once('value').then(function(snapshot) {
-    var mediaArr = snapshot.val() || [];
+    var val = snapshot.val() || [];
+    // Firebase 객체를 배열로 변환
+    var mediaArr = [];
+    if (Array.isArray(val)) {
+      mediaArr = val.filter(function(m) { return m && m.data; });
+    } else {
+      Object.keys(val).forEach(function(key) {
+        if (val[key] && val[key].data) mediaArr.push(val[key]);
+      });
+    }
     if (index >= 0 && index < mediaArr.length) {
       var name = mediaArr[index].name || 'file';
       mediaArr.splice(index, 1);
-      db.ref('clientData/media').set(mediaArr).then(function() {
+      rebuildFirebaseMedia(mediaArr).then(function() {
         showToast('✓ ' + name + ' 삭제 완료');
-        // 어드민 데이터도 동기화
         window.adminMediaData = mediaArr.slice();
         renderAdminMediaGrid();
       }).catch(function(err) {
@@ -2118,8 +1991,8 @@ function saveMediaCaption(index, caption) {
 }
 
 function syncToClient() {
-  // Firebase에 모든 데이터 저장 (미디어 포함)
-  const data = {
+  // Firebase에 데이터 저장 - 미디어는 개별 업로드 (크기 제한 우회)
+  const metaData = {
     projectTitle: document.getElementById('adminProjectTitle').value,
     projectDesc: document.getElementById('adminProjectDesc').value,
     card1Title: document.getElementById('adminCard1Title').value,
@@ -2133,40 +2006,65 @@ function syncToClient() {
 
   // 마일스톤 데이터 추가
   for (let i = 1; i <= 5; i++) {
-    data['milestone' + i + 'Title'] = document.getElementById('adminM' + i + 'Title').value;
-    data['milestone' + i + 'Date'] = document.getElementById('adminM' + i + 'Date').value;
-    data['milestone' + i + 'Desc'] = document.getElementById('adminM' + i + 'Desc').value;
+    metaData['milestone' + i + 'Title'] = document.getElementById('adminM' + i + 'Title').value;
+    metaData['milestone' + i + 'Date'] = document.getElementById('adminM' + i + 'Date').value;
+    metaData['milestone' + i + 'Desc'] = document.getElementById('adminM' + i + 'Desc').value;
   }
 
-  // 미디어 데이터도 Firebase에 저장
-  if (window.adminMediaData && window.adminMediaData.length > 0) {
-    data.media = window.adminMediaData;
-  } else {
-    data.media = [];
-  }
+  // mediaCount를 메타데이터에 저장 (리스너에서 배열 길이 파악용)
+  var mediaArr = window.adminMediaData || [];
+  metaData.mediaCount = mediaArr.length;
 
-  // 데이터 크기 체크
-  var dataStr = JSON.stringify(data);
-  var dataSizeMB = (dataStr.length / 1024 / 1024).toFixed(1);
-  // 동기화 상태 표시
   const syncBtn = document.querySelector('.admin-btn[onclick="syncToClient()"]');
   if (syncBtn) {
-    syncBtn.textContent = 'Syncing... (' + dataSizeMB + 'MB)';
+    syncBtn.textContent = 'Syncing...';
     syncBtn.disabled = true;
   }
-  showToast('🔄 Firebase 동기화 중... (' + dataSizeMB + 'MB)');
+  showToast('🔄 메타데이터 동기화 중...');
 
-  db.ref('clientData').set(data).then(function() {
-    if (syncBtn) {
-      syncBtn.textContent = '✓ Synced!';
-      syncBtn.style.background = '#22c55e';
-      syncBtn.disabled = false;
-      setTimeout(function() {
-        syncBtn.textContent = 'Sync to Client';
-        syncBtn.style.background = '';
-      }, 2000);
+  // 1단계: 메타데이터 먼저 저장 (미디어 제외, 가벼움)
+  db.ref('clientData').update(metaData).then(function() {
+    showToast('✓ 메타데이터 완료. 미디어 업로드 시작...');
+
+    if (mediaArr.length === 0) {
+      // 미디어 없으면 기존 미디어 노드 삭제
+      return db.ref('clientData/media').remove().then(function() {
+        syncComplete(syncBtn, 0);
+      });
     }
-    showToast('Firebase 동기화 완료! 모든 기기에 실시간 반영됩니다.');
+
+    // 2단계: 미디어를 개별 노드로 업로드
+    var uploaded = 0;
+    var failed = 0;
+    var total = mediaArr.length;
+
+    // 순차 업로드 (하나씩, 안정적)
+    function uploadNext(idx) {
+      if (idx >= total) {
+        // 3단계: 이전에 더 많은 미디어가 있었으면 남은 노드 삭제
+        cleanupExtraMediaNodes(total).then(function() {
+          syncComplete(syncBtn, uploaded, failed);
+        });
+        return;
+      }
+
+      var item = mediaArr[idx];
+      var sizeMB = (JSON.stringify(item).length / 1024 / 1024).toFixed(1);
+      if (syncBtn) syncBtn.textContent = 'Uploading ' + (idx + 1) + '/' + total + ' (' + sizeMB + 'MB)';
+      showToast('📤 ' + (idx + 1) + '/' + total + ' 업로드 중... (' + (item.name || 'file') + ', ' + sizeMB + 'MB)');
+
+      db.ref('clientData/media/' + idx).set(item).then(function() {
+        uploaded++;
+        uploadNext(idx + 1);
+      }).catch(function(err) {
+        failed++;
+        showToast('⚠ ' + (item.name || 'file') + ' 실패: ' + err.message);
+        uploadNext(idx + 1); // 실패해도 다음 파일 계속
+      });
+    }
+
+    uploadNext(0);
+
   }).catch(function(error) {
     if (syncBtn) {
       syncBtn.textContent = '✗ Error';
@@ -2179,6 +2077,39 @@ function syncToClient() {
     }
     showToast('Sync 오류: ' + error.message);
   });
+}
+
+function cleanupExtraMediaNodes(currentCount) {
+  // Firebase에서 현재 미디어 수보다 큰 인덱스의 노드 삭제
+  return db.ref('clientData/media').once('value').then(function(snapshot) {
+    var val = snapshot.val();
+    if (!val) return;
+    // Firebase 배열은 객체로 저장될 수 있음
+    var keys = Object.keys(val);
+    var promises = [];
+    keys.forEach(function(key) {
+      var idx = parseInt(key);
+      if (!isNaN(idx) && idx >= currentCount) {
+        promises.push(db.ref('clientData/media/' + idx).remove());
+      }
+    });
+    return Promise.all(promises);
+  });
+}
+
+function syncComplete(syncBtn, uploaded, failed) {
+  if (syncBtn) {
+    syncBtn.textContent = '✓ Synced!';
+    syncBtn.style.background = '#22c55e';
+    syncBtn.disabled = false;
+    setTimeout(function() {
+      syncBtn.textContent = 'Sync to Client';
+      syncBtn.style.background = '';
+    }, 2000);
+  }
+  var msg = '✅ 동기화 완료! ' + uploaded + '개 미디어 업로드됨';
+  if (failed > 0) msg += ' (' + failed + '개 실패)';
+  showToast(msg);
 }
 
 // Toast 알림 함수
