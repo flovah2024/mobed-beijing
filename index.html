@@ -1823,7 +1823,13 @@ function loadSyncedData() {
         mediaItem.className = 'media-item';
 
         let element;
-        if (media.type === 'image') {
+        if (media.type === 'youtube') {
+          element = document.createElement('iframe');
+          element.src = 'https://www.youtube.com/embed/' + media.data;
+          element.style.cssText = 'width:100%;height:100%;border:none;';
+          element.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+          element.allowFullscreen = true;
+        } else if (media.type === 'image') {
           element = document.createElement('img');
           element.src = media.data;
         } else if (media.thumbnail) {
@@ -2022,13 +2028,13 @@ function loadAdminForm() {
 function firebaseMediaToArray(raw) {
   if (!raw) return [];
   if (Array.isArray(raw)) {
-    return raw.filter(function(m) { return m && (m.data || m.type === 'divider'); });
+    return raw.filter(function(m) { return m && (m.data || m.type === 'divider' || m.type === 'youtube'); });
   }
   // Firebase가 객체로 반환하는 경우 (개별 set 사용 시)
   var arr = [];
   var keys = Object.keys(raw).sort(function(a,b){ return parseInt(a) - parseInt(b); });
   keys.forEach(function(key) {
-    if (raw[key] && (raw[key].data || raw[key].type === 'divider')) arr.push(raw[key]);
+    if (raw[key] && (raw[key].data || raw[key].type === 'divider' || raw[key].type === 'youtube')) arr.push(raw[key]);
   });
   return arr;
 }
@@ -2244,6 +2250,43 @@ function addDivider() {
   });
 }
 
+function extractYoutubeId(url) {
+  if (!url) return null;
+  var match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/))([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
+
+function addYoutubeEmbed() {
+  var input = document.getElementById('youtubeUrlInput');
+  var url = input.value.trim();
+  if (!url) {
+    showToast('⚠ 유튜브 링크를 입력해주세요');
+    return;
+  }
+  var videoId = extractYoutubeId(url);
+  if (!videoId) {
+    showToast('⚠ 유효한 유튜브 링크가 아닙니다');
+    return;
+  }
+  var ytObj = {
+    type: 'youtube',
+    data: videoId,
+    url: url,
+    name: 'YouTube-' + videoId
+  };
+  showToast('📤 유튜브 영상 추가 중...');
+  db.ref('clientData/media').once('value').then(function(snapshot) {
+    var existing = firebaseMediaToArray(snapshot.val());
+    var nextIdx = existing.length;
+    return db.ref('clientData/media/' + nextIdx).set(ytObj);
+  }).then(function() {
+    input.value = '';
+    showToast('✓ 유튜브 영상 추가 완료!');
+  }).catch(function(err) {
+    showToast('⚠ 실패: ' + err.message);
+  });
+}
+
 function saveDividerText(index, text) {
   db.ref('clientData/media/' + index + '/text').set(text).then(function() {
     console.log('[Divider] text saved at index', index);
@@ -2395,7 +2438,12 @@ function renderAdminMediaGrid() {
     mediaItem.dataset.index = index;
 
     let element;
-    if (media.type === 'image') {
+    if (media.type === 'youtube') {
+      element = `<div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;border-radius:4px;overflow:hidden;">` +
+        `<img src="https://img.youtube.com/vi/${media.data}/mqdefault.jpg" style="position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;">` +
+        `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:red;border-radius:8px;padding:6px 10px;">` +
+        `<span style="color:#fff;font-size:11px;font-weight:bold;">▶ YT</span></div></div>`;
+    } else if (media.type === 'image') {
       element = `<img src="${media.data}" alt="media">`;
     } else if (media.thumbnail) {
       element = `<img src="${media.thumbnail}" alt="thumbnail" style="width:100%; height:100%; object-fit:contain; background:#000;">`;
@@ -2405,8 +2453,11 @@ function renderAdminMediaGrid() {
 
     var btnsHtml = `
       <button class="admin-media-remove" onclick="removeAdminMedia(${index})">X</button>
-      <button class="admin-media-replace" onclick="triggerReplaceMedia(${index})">↻</button>
     `;
+    // 유튜브가 아닌 경우에만 교체 버튼
+    if (media.type !== 'youtube') {
+      btnsHtml += `<button class="admin-media-replace" onclick="triggerReplaceMedia(${index})">↻</button>`;
+    }
     // 영상일 때 썸네일 버튼 추가
     if (media.type === 'video') {
       btnsHtml += `<button class="admin-thumb-btn" onclick="triggerThumbUpload(${index})">` +
@@ -2896,6 +2947,10 @@ function setupDragDrop(zoneId, handler) {
       <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
         <button class="admin-btn" onclick="addPlaceholderImage()" style="font-size:12px; padding:8px 16px;">+ 제작중 플레이스홀더</button>
         <button class="admin-btn" onclick="addDivider()" style="font-size:12px; padding:8px 16px;">+ 구분선 추가</button>
+      </div>
+      <div style="display:flex; gap:6px; margin-top:8px; align-items:center;">
+        <input type="text" class="admin-form-input" id="youtubeUrlInput" placeholder="유튜브 링크 붙여넣기 (예: https://youtu.be/...)" style="flex:1; margin:0; font-size:12px;">
+        <button class="admin-btn" onclick="addYoutubeEmbed()" style="font-size:12px; padding:8px 14px; white-space:nowrap;">▶ 유튜브 추가</button>
       </div>
       <div class="admin-media-grid" id="adminMediaGrid"></div>
     </div>
