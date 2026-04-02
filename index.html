@@ -289,6 +289,25 @@
     display: flex;
     flex-direction: column;
   }
+  .admin-media-item.media-wide {
+    grid-column: 1 / -1;
+  }
+  .admin-wide-btn {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    background: rgba(0,0,0,0.8);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: 9px;
+    z-index: 5;
+    transition: all 0.2s;
+  }
+  .admin-wide-btn:hover { background: #8b5cf6; }
+  .admin-wide-btn.active { background: #8b5cf6; }
 
   .admin-media-item img,
   .admin-media-item video {
@@ -764,6 +783,10 @@
     grid-template-columns: repeat(4, 1fr);
     gap: 12px;
     padding: 0 20px;
+  }
+
+  .media-item.media-wide {
+    grid-column: 1 / -1;
   }
 
   .media-item {
@@ -1820,7 +1843,7 @@ function loadSyncedData() {
         }
 
         const mediaItem = document.createElement('div');
-        mediaItem.className = 'media-item';
+        mediaItem.className = 'media-item' + (media.wide ? ' media-wide' : '');
 
         let element;
         if (media.type === 'youtube') {
@@ -2258,30 +2281,40 @@ function extractYoutubeId(url) {
 
 function addYoutubeEmbed() {
   var input = document.getElementById('youtubeUrlInput');
-  var url = input.value.trim();
-  if (!url) {
+  var text = input.value.trim();
+  if (!text) {
     showToast('⚠ 유튜브 링크를 입력해주세요');
     return;
   }
-  var videoId = extractYoutubeId(url);
-  if (!videoId) {
-    showToast('⚠ 유효한 유튜브 링크가 아닙니다');
+  // 여러 줄 지원: 줄바꿈으로 분리하여 각각 추가
+  var lines = text.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+  var validItems = [];
+  var invalidCount = 0;
+  lines.forEach(function(url) {
+    var videoId = extractYoutubeId(url);
+    if (videoId) {
+      validItems.push({ type: 'youtube', data: videoId, url: url, name: 'YouTube-' + videoId });
+    } else {
+      invalidCount++;
+    }
+  });
+  if (validItems.length === 0) {
+    showToast('⚠ 유효한 유튜브 링크가 없습니다');
     return;
   }
-  var ytObj = {
-    type: 'youtube',
-    data: videoId,
-    url: url,
-    name: 'YouTube-' + videoId
-  };
-  showToast('📤 유튜브 영상 추가 중...');
+  showToast('📤 유튜브 영상 ' + validItems.length + '개 추가 중...');
   db.ref('clientData/media').once('value').then(function(snapshot) {
     var existing = firebaseMediaToArray(snapshot.val());
     var nextIdx = existing.length;
-    return db.ref('clientData/media/' + nextIdx).set(ytObj);
+    var promises = validItems.map(function(item, i) {
+      return db.ref('clientData/media/' + (nextIdx + i)).set(item);
+    });
+    return Promise.all(promises);
   }).then(function() {
     input.value = '';
-    showToast('✓ 유튜브 영상 추가 완료!');
+    var msg = '✓ 유튜브 영상 ' + validItems.length + '개 추가 완료!';
+    if (invalidCount > 0) msg += ' (' + invalidCount + '개 무효 링크 제외)';
+    showToast(msg);
   }).catch(function(err) {
     showToast('⚠ 실패: ' + err.message);
   });
@@ -2463,7 +2496,11 @@ function renderAdminMediaGrid() {
       btnsHtml += `<button class="admin-thumb-btn" onclick="triggerThumbUpload(${index})">` +
         (media.thumbnail ? '🖼 썸네일 변경' : '🖼 썸네일') + `</button>`;
     }
+    // 와이드(4칸) 토글 버튼
+    btnsHtml += `<button class="admin-wide-btn ${media.wide ? 'active' : ''}" onclick="toggleMediaWide(${index})">${media.wide ? '◀ 1x' : '▶ 4x'}</button>`;
+
     mediaItem.innerHTML = element + btnsHtml;
+    if (media.wide) mediaItem.classList.add('media-wide');
 
     // 교체용 숨겨진 file input
     var replaceInput = document.createElement('input');
@@ -2578,6 +2615,16 @@ function handleAdminDragEnd(e) {
 }
 
 // 교체 버튼 → 파일 선택 창 열기
+function toggleMediaWide(index) {
+  var current = window.adminMediaData[index].wide || false;
+  var newVal = !current;
+  window.adminMediaData[index].wide = newVal;
+  db.ref('clientData/media/' + index + '/wide').set(newVal).then(function() {
+    showToast(newVal ? '✓ 4x 와이드 적용!' : '✓ 1x 기본 크기로 변경');
+  });
+  renderAdminMediaGrid();
+}
+
 function triggerReplaceMedia(index) {
   document.getElementById('replaceInput_' + index).click();
 }
@@ -2948,9 +2995,10 @@ function setupDragDrop(zoneId, handler) {
         <button class="admin-btn" onclick="addPlaceholderImage()" style="font-size:12px; padding:8px 16px;">+ 제작중 플레이스홀더</button>
         <button class="admin-btn" onclick="addDivider()" style="font-size:12px; padding:8px 16px;">+ 구분선 추가</button>
       </div>
-      <div style="display:flex; gap:6px; margin-top:8px; align-items:center;">
-        <input type="text" class="admin-form-input" id="youtubeUrlInput" placeholder="유튜브 링크 붙여넣기 (예: https://youtu.be/...)" style="flex:1; margin:0; font-size:12px;">
-        <button class="admin-btn" onclick="addYoutubeEmbed()" style="font-size:12px; padding:8px 14px; white-space:nowrap;">▶ 유튜브 추가</button>
+      <div style="margin-top:12px; background:rgba(255,0,0,0.08); border:1px solid rgba(255,0,0,0.25); border-radius:8px; padding:12px;">
+        <div style="font-size:12px; font-weight:600; color:#ff4444; margin-bottom:8px;">▶ YouTube 영상 추가</div>
+        <textarea id="youtubeUrlInput" placeholder="유튜브 링크를 한 줄에 하나씩 붙여넣기&#10;&#10;예:&#10;https://youtu.be/abc123&#10;https://youtu.be/def456" style="width:100%; min-height:80px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,0,0,0.2); border-radius:6px; color:#fff; font-size:13px; padding:10px; resize:vertical; font-family:'Noto Sans KR',sans-serif; outline:none;"></textarea>
+        <button class="admin-btn" onclick="addYoutubeEmbed()" style="margin-top:8px; font-size:13px; padding:10px 20px; background:#ff4444; width:100%;">▶ 유튜브 추가</button>
       </div>
       <div class="admin-media-grid" id="adminMediaGrid"></div>
     </div>
